@@ -1,11 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { JobTypeService } from './job-type.service';
 import { CreateJobTypeDto } from './dto/create-job-type.dto';
 import { UpdateJobTypeDto } from './dto/update-job-type.dto';
 
 @Controller('job-type')
 export class JobTypeController {
-  constructor(private readonly jobTypeService: JobTypeService) {}
+  constructor(private readonly jobTypeService: JobTypeService) { }
 
   @Post()
   create(@Body() createJobTypeDto: CreateJobTypeDto) {
@@ -17,9 +25,14 @@ export class JobTypeController {
     return this.jobTypeService.findAll();
   }
 
+  @Get('suited-jobs/:userId')
+  findAllSuitableJobs(@Param('userId') userId: string) {
+    return this.jobTypeService.findAllSuitableJobs(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.jobTypeService.findOne(+id);
+    return this.jobTypeService.findOne(id);
   }
 
   @Patch(':id')
