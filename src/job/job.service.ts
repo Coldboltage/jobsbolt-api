@@ -16,9 +16,9 @@ import { ConfigService } from '@nestjs/config';
 import { BatchService } from '../batch/batch.service';
 import { Cron } from '@nestjs/schedule';
 import { BatchStatusEnum } from '../batch/entity/batch.entity';
-import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 const path = require('path');
 const fs = require('fs');
 
@@ -71,6 +71,7 @@ export class JobService implements OnApplicationBootstrap {
       console.log(completeJob);
       await this.updateFromCompleteJobParse(completeJob);
     }
+    await this.sendDiscordNewJobMessage();
   }
 
   processJobObject(job: IndividualJobFromBatch): CompleteJobParse {

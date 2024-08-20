@@ -6,10 +6,16 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { JobService } from './job.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/role.enum';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('job')
 export class JobController {
@@ -22,6 +28,7 @@ export class JobController {
 
   @Post('by-worker/:id')
   byBot(@Param('id') id: string, @Body() createJobDto: CreateJobDto) {
+    console.log("I was called")
     return this.jobService.addJobsByBot(id, createJobDto.jobs);
   }
 
@@ -30,19 +37,22 @@ export class JobController {
     return this.jobService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('get-all-new-jobs/')
+  getAllNewJobs(@Req() req) {
+    return this.jobService.findAllUserUnsendJobs(req.user.id);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('suited-jobs')
+  findAllSuitableJobs(@Req() req) {
+    return this.jobService.findAllSuitableJobs(req.user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.jobService.findOne(+id);
-  }
-
-  @Get('get-all-new-jobs/:userId')
-  getAllNewJobs(@Param('userId') userId: string) {
-    return this.jobService.findAllUserUnsendJobs(userId);
-  }
-
-  @Get('suited-jobs/:userId')
-  findAllSuitableJobs(@Param('userId') userId: string) {
-    return this.jobService.findAllSuitableJobs(userId);
   }
 
   @Patch(':id')

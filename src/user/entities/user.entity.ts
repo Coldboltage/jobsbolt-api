@@ -1,5 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { JobType } from '../../job-type/entities/job-type.entity';
+import { Role } from '../../auth/role.enum';
 
 @Entity()
 export class User {
@@ -27,6 +28,9 @@ export class User {
   @Column({ nullable: true })
   description: string; // User talks about themself and what they think of themselves and their CV, what they aim to do
 
+  @Column({ nullable: true })
+  role: Role;
+
   @OneToMany(() => JobType, (jobType) => jobType.user, { eager: true })
   jobType: JobType[];
 }
@@ -36,4 +40,5 @@ export interface SlimUser {
   name: string;
   email: string;
   date: Date;
+  role: Role;
 }

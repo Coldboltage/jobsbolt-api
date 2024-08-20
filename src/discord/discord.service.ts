@@ -130,13 +130,15 @@ Join **The Points Guy** as a Full Stack Software Engineer! Develop and enhance a
     // depending on the amount of jobs, we need to loop through this every 10 times.
     const embeds = jobs.map(this.createEmbed);
 
-    const discordMessageLimit = 2;
+    const discordMessageLimit = 1;
     const discordMultipleEmbedsArray: EmbedBuilder[][] = [];
 
     for (let i = 0; i < embeds.length; i += discordMessageLimit) {
       const embedMessage = embeds.slice(i, i + discordMessageLimit);
       discordMultipleEmbedsArray.push(embedMessage);
     }
+
+    await user.send({ content: `New jobs for ${new Date().toDateString()}` })
 
     for (const embedMessages of discordMultipleEmbedsArray) {
       await user.send({ embeds: embedMessages });
