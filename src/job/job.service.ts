@@ -288,8 +288,8 @@ export class JobService implements OnApplicationBootstrap {
     }
   }
 
-  findAll() {
-    return `This action returns all job`;
+  async findAll() {
+    return this.jobRepository.find({})
   }
 
   async findAllSuitableJobs(userId: string) {
