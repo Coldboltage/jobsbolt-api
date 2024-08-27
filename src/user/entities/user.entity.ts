@@ -23,13 +23,13 @@ export class User {
   cv: string;
 
   @Column({ nullable: true })
-  discordId: string
+  discordId: string;
 
   @Column({ nullable: true })
   description: string; // User talks about themself and what they think of themselves and their CV, what they aim to do
 
-  @Column({ nullable: true })
-  role: Role;
+  @Column({ type: 'simple-array', nullable: true })
+  roles: Role[];
 
   @OneToMany(() => JobType, (jobType) => jobType.user, { eager: true })
   jobType: JobType[];
@@ -40,5 +40,5 @@ export interface SlimUser {
   name: string;
   email: string;
   date: Date;
-  role: Role;
+  roles: Role[];
 }
