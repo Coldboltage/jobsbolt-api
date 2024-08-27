@@ -1,8 +1,8 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { ROLES_KEY } from "./roles.decorator";
-import { Role } from "./role.enum";
-import { Reflector } from "@nestjs/core";
-import { User } from "../user/entities/user.entity";
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { ROLES_KEY } from './roles.decorator';
+import { Role } from './role.enum';
+import { Reflector } from '@nestjs/core';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -15,7 +15,14 @@ export class RolesGuard implements CanActivate {
     ]);
 
     if (!requiredRoles) return true;
+
+    // Check if user is admin
     const user: User = context.switchToHttp().getRequest().user;
-    return requiredRoles.some((role) => user.role === role);
+
+    // Check if user is admin
+    const isUserAdmin = user.roles.some((role) => role === Role.ADMIN);
+    if (isUserAdmin) return true;
+
+    return requiredRoles.some((role) => user.roles.includes(role));
   }
 }
