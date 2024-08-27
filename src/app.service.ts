@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JobTypeService } from './job-type/job-type.service';
 import { JobService } from './job/job.service';
 import axios from 'axios';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
@@ -14,19 +15,24 @@ export class AppService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     const fullStartTest = this.configService.get<string>('general.fullTest');
-    if (fullStartTest === 'true') {
-      await this.jobTypeService.checkNewJobs();
-      const checkInterval = setInterval(async () => {
-        const result = await this.checkStatus();
-        if (result) {
-          clearInterval(checkInterval); // Stop the polling
-          await this.jobService.createBatchJob(); // Run the batch job
-        }
-      }, 10000); // Check every 10 seconds
-    }
+    if (fullStartTest == 'true') await this.fullRun();
+    // await this.jobService.resetFalse('373b0fd3-f744-489d-94a4-e4be66384d05')
   }
+
   getHello(): string {
     return 'Hello World!';
+  }
+
+  @Cron('0 */12 * * *')
+  async fullRun() {
+    await this.jobTypeService.checkNewJobs();
+    const checkInterval = setInterval(async () => {
+      const result = await this.checkStatus();
+      if (result) {
+        clearInterval(checkInterval); // Stop the polling
+        await this.jobService.createBatchJob(); // Run the batch job
+      }
+    }, 10000); // Check every 10 seconds
   }
 
   async checkStatus(): Promise<boolean> {

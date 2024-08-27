@@ -33,7 +33,7 @@ export class JobTypeService implements OnApplicationBootstrap {
     }
   }
 
-  @Cron('0 */6 * * *')
+  // @Cron('0 */6 * * *')
   async checkJobCron() {
     await this.checkNewJobs();
   }

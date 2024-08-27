@@ -9,6 +9,9 @@ export class Job {
   @Column()
   jobId: string;
 
+  @Column({ default: false })
+  applied: boolean;
+
   @Column()
   link: string; // Indeed link to the job in question
 

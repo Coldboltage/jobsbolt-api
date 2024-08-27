@@ -19,6 +19,7 @@ import { BatchStatusEnum } from '../batch/entity/batch.entity';
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JobType } from '../job-type/entities/job-type.entity';
 const path = require('path');
 const fs = require('fs');
 
@@ -330,11 +331,51 @@ export class JobService implements OnApplicationBootstrap {
     return allJobsToSend;
   }
 
+  async findAllAppliedJobs(userId: string, state: boolean) {
+    return this.jobRepository.find({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        applied: state,
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+      },
+    });
+  }
+
   async sendUserNewJobs(userId: string) {
     const allJobsToSend = await this.findAllUserUnsendJobs(userId);
     allJobsToSend.forEach((job) => (job.notification = true));
     await this.jobRepository.save(allJobsToSend);
     return allJobsToSend;
+  }
+
+  async resetFalse(userId: string) {
+    const allFalseJobs = await this.jobRepository.find({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+        suited: false,
+      },
+    });
+    allFalseJobs.forEach(async (job) => {
+      job.scannedLast = null;
+      await this.jobRepository.save(job);
+    });
   }
 
   findOne(id: number) {
@@ -356,6 +397,28 @@ export class JobService implements OnApplicationBootstrap {
         conciseSuited: completeJob.conciseSuited,
       },
     );
+  }
+
+  async updateJobApplication(userId: string, jobId: string, status: boolean) {
+    const jobEntity = await this.jobRepository.findOne({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobId,
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+      },
+    });
+
+    jobEntity.applied = status;
+    console.log(jobEntity);
+    return this.jobRepository.save(jobEntity);
   }
 
   remove(id: number) {
