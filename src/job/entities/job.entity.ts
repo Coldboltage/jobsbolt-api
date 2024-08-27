@@ -1,5 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { JobType } from '../../job-type/entities/job-type.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Job {
@@ -58,12 +59,28 @@ export class Job {
 }
 
 export class JobInfoInterface {
+  @ApiProperty({
+    format: 'uuidv4',
+    description: 'Unique Identifer for job record',
+  })
   jobId: string;
+
+  @ApiProperty()
   jobTypeId: string;
+
+  @ApiProperty()
   name: string;
+
+  @ApiProperty()
   description: string;
+
+  @ApiProperty()
   pay: string;
+
+  @ApiProperty()
   location: string;
+
+  @ApiProperty()
   companyName: string;
 }
 
