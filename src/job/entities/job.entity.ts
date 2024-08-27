@@ -5,56 +5,73 @@ import { ApiProperty } from '@nestjs/swagger';
 @Entity()
 export class Job {
   @PrimaryGeneratedColumn('uuid') // Fairly sure we can't have two of the same jobId so we'll use this
+  @ApiProperty()
   id: string;
 
   @Column()
+  @ApiProperty()
   jobId: string;
 
   @Column({ default: false })
+  @ApiProperty()
   applied: boolean;
 
   @Column()
+  @ApiProperty()
   link: string; // Indeed link to the job in question
 
   @Column()
+  @ApiProperty()
   name: string; // name of the job role
 
   @Column()
+  @ApiProperty()
   companyName: string;
 
   @Column()
+  @ApiProperty()
   date: Date; // After 30 days, we could probably delete the job? Not too sure how easy it'll be to get a closing
 
   @Column()
+  @ApiProperty()
   description: string;
 
   @Column()
+  @ApiProperty()
   pay: string;
 
   @Column()
+  @ApiProperty()
   location: string;
 
   @Column({ nullable: true })
+  @ApiProperty()
   summary: string;
 
   @Column({ nullable: true })
+  @ApiProperty()
   conciseDescription: string;
 
   @Column({ nullable: true })
+  @ApiProperty()
   conciseSuited: string;
 
   // Management
 
   @Column('boolean', { default: false })
+  @ApiProperty()
   suited: boolean;
 
   @ManyToOne(() => JobType, (jobType) => jobType.jobs)
+  @ApiProperty({ type: () => JobType })
   jobType: JobType;
 
   @Column('date', { nullable: true })
+  @ApiProperty()
   scannedLast: Date;
 
   @Column({ default: false })
+  @ApiProperty()
   notification: boolean;
 }
 
