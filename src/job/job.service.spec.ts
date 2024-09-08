@@ -24,9 +24,10 @@ import { PayUnits } from '../job-type/types';
 import { User } from '../user/entities/user.entity';
 import OpenAI from 'openai';
 import { Role } from '../auth/role.enum';
+import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
 
 const path = require('path');
-const fs = require('fs');
+// const fs = require('fs');
 
 // Manually mock the OpenAI class
 jest.mock('openai', () => {
@@ -590,9 +591,86 @@ describe('JobService', () => {
   });
 
   describe('openAISendJSON', () => {
-    beforeEach(() => {
+    beforeAll(async () => {
       jest.clearAllMocks(); // Clear any previous mock calls
+      const jsonLFormatJobs = [jsonLayout]
+        .map((job) => {
+          console.log(job);
+          return JSON.stringify(job);
+        })
+        .join('\n');
+      await fs.writeFile(filePath, jsonLFormatJobs); // Asynchronously writes the file
     });
+
+    afterAll(async () => {
+      try {
+        // Check if the file exists asynchronously
+        await fs.access(filePath); // If file does not exist, this will throw an error
+        await fs.unlink(filePath); // Asynchronously delete the file
+      } catch (err) {
+        if (err.code !== 'ENOENT') { // Ignore the error if the file doesn't exist
+          throw err;
+        }
+      }
+    });
+
+    const { mockJob } = createFullUserWithDetails();
+    const jsonLayout = {
+      custom_id: mockJob.jobId,
+      method: 'POST',
+      url: '/v1/chat/completions',
+      body: {
+        model: 'gpt-4o-2024-08-06',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
+          },
+          { role: 'user', content: expect.any(String) },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'job_analysis_schema',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                analysis: {
+                  type: 'string',
+                  description:
+                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
+                },
+                is_suitable: {
+                  type: 'boolean',
+                  description:
+                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
+                },
+                conciseDescription: {
+                  type: 'string',
+                  description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
+                },
+                conciseSuited: {
+                  type: 'string',
+                  description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
+                },
+              },
+              required: [
+                'analysis',
+                'is_suitable',
+                'conciseDescription',
+                'conciseSuited',
+              ],
+              additionalProperties: false,
+            },
+          },
+        },
+        max_tokens: 1000,
+      },
+    };
+    const filePath = path.join(__dirname, 'requests.jsonl');
+    path.join(__dirname, 'requests.jsonl');
 
     it('Create OpenAI Batch Request', async () => {
       // Arrange
@@ -627,6 +705,7 @@ describe('JobService', () => {
       console.log(response);
       expect(mockCreate).toHaveBeenCalled();
       expect(mockBatchesCreate).toHaveBeenCalled();
+      await expect(fs.access(filePath)).resolves.not.toThrow();
     });
   });
 
@@ -664,67 +743,84 @@ describe('JobService', () => {
   });
 
   describe('buildJobJson', () => {
+    const { mockJob } = createFullUserWithDetails();
+    const jsonLayout = {
+      custom_id: mockJob.jobId,
+      method: 'POST',
+      url: '/v1/chat/completions',
+      body: {
+        model: 'gpt-4o-2024-08-06',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
+          },
+          { role: 'user', content: expect.any(String) },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'job_analysis_schema',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                analysis: {
+                  type: 'string',
+                  description:
+                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
+                },
+                is_suitable: {
+                  type: 'boolean',
+                  description:
+                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
+                },
+                conciseDescription: {
+                  type: 'string',
+                  description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
+                },
+                conciseSuited: {
+                  type: 'string',
+                  description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
+                },
+              },
+              required: [
+                'analysis',
+                'is_suitable',
+                'conciseDescription',
+                'conciseSuited',
+              ],
+              additionalProperties: false,
+            },
+          },
+        },
+        max_tokens: 1000,
+      },
+    };
+    // const filePath = path.join(__dirname, 'requests.jsonl');
+    // path.join(__dirname, 'requests.jsonl');
+
+    // beforeEach(() => {
+    //   const jsonLFormatJobs = [jsonLayout]
+    //     .map((job) => {
+    //       console.log(job);
+    //       return JSON.stringify(job);
+    //     })
+    //     .join('\n');
+    //   fs.writeFile(filePath, jsonLFormatJobs);
+    // });
+
+    // afterAll(() => {
+    //   if (fs.existsSync(filePath)) {
+    //     fs.unlinkSync(filePath); // Synchronously deletes the file
+    //   }
+    // });
     it('should create the JSON exactly to template', () => {
       // Arrange
-      const { mockJob } = createFullUserWithDetails();
       const createContentMessageSpy = jest
         .spyOn(service, 'createContentMessage')
         .mockReturnValueOnce('message');
-
-      const jsonLayout = {
-        custom_id: mockJob.jobId,
-        method: 'POST',
-        url: '/v1/chat/completions',
-        body: {
-          model: 'gpt-4o-2024-08-06',
-          messages: [
-            {
-              role: 'system',
-              content:
-                'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
-            },
-            { role: 'user', content: expect.any(String) },
-          ],
-          response_format: {
-            type: 'json_schema',
-            json_schema: {
-              name: 'job_analysis_schema',
-              strict: true,
-              schema: {
-                type: 'object',
-                properties: {
-                  analysis: {
-                    type: 'string',
-                    description:
-                      'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
-                  },
-                  is_suitable: {
-                    type: 'boolean',
-                    description:
-                      'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
-                  },
-                  conciseDescription: {
-                    type: 'string',
-                    description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
-                  },
-                  conciseSuited: {
-                    type: 'string',
-                    description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
-                  },
-                },
-                required: [
-                  'analysis',
-                  'is_suitable',
-                  'conciseDescription',
-                  'conciseSuited',
-                ],
-                additionalProperties: false,
-              },
-            },
-          },
-          max_tokens: 1000,
-        },
-      };
 
       // Act
       const result = service.buildJobJson(mockJob);
@@ -736,6 +832,6 @@ describe('JobService', () => {
   });
 
   describe('sendDiscordNewJobMessage', () => {
-    it('should send job messages to users')
-  })
+    it.todo('should send job messages to users');
+  });
 });

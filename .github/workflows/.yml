@@ -1,0 +1,37 @@
+name: Run NestJS Tests
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events for the main branch
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# The jobs that will run in the workflow
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20' # You can specify the Node.js version here
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Job Service
+        run: npm run test job.service
+
+      - name: Run Job Controller
+        run: npm run test job.controller
