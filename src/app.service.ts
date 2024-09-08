@@ -1,4 +1,8 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  Injectable,
+  OnApplicationBootstrap,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JobTypeService } from './job-type/job-type.service';
 import { JobService } from './job/job.service';
@@ -6,7 +10,7 @@ import axios from 'axios';
 import { Cron } from '@nestjs/schedule';
 
 @Injectable()
-export class AppService implements OnApplicationBootstrap {
+export class AppService implements OnApplicationBootstrap, OnModuleInit {
   constructor(
     private configService: ConfigService,
     private jobTypeService: JobTypeService,
@@ -17,6 +21,12 @@ export class AppService implements OnApplicationBootstrap {
     const fullStartTest = this.configService.get<string>('general.fullTest');
     if (fullStartTest == 'true') await this.fullRun();
     // await this.jobService.resetFalse('373b0fd3-f744-489d-94a4-e4be66384d05')
+  }
+
+  onModuleInit() {
+    console.log('test');
+    const fullStartTest = this.configService.get<string>('general.fullTest');
+    console.log(fullStartTest)
   }
 
   getHello(): string {

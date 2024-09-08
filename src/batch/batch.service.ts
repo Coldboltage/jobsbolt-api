@@ -31,7 +31,7 @@ export class BatchService {
   }
 
   // We've got all the batch jobs, now check if they are available
-  async checkPendingBatchJobs() {
+  async checkPendingBatchJobs(): Promise<IndividualJobFromBatch[]> {
     const pendingBatchJobs = await this.getPendingBatchJobs();
     for (const batch of pendingBatchJobs) {
       console.log('Checking for jobs');
@@ -48,7 +48,7 @@ export class BatchService {
         finishedBatchJobs.push(...finishedBatch);
       }
       // Rest of jobs are still going on
-      console.log(finishedBatchJobs)
+      console.log(finishedBatchJobs);
       return finishedBatchJobs;
     }
   }

@@ -4,22 +4,21 @@ import { JobTypeController } from './job-type.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JobType } from './entities/job-type.entity';
 import { UserModule } from '../user/user.module';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ClientsModule } from '@nestjs/microservices';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([JobType]),
     UserModule,
-    ClientsModule.register([
+
+    ClientsModule.registerAsync([
       {
         name: 'JOBS_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://localhost:5672'],
-          queue: 'jobs_queue',
-          queueOptions: {
-            durable: false,
-          },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => {
+          return configService.get('rabbitmq');
         },
       },
     ]),

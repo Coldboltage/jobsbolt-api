@@ -21,14 +21,12 @@ export class RolesGuard implements CanActivate {
 
     if (!requiredRoles) return true;
 
-    // Check if user is admin
     const user: User = context.switchToHttp().getRequest().user;
 
-    // Check if user is admin
     const isUserAdmin = user.roles.some((role) => role === Role.ADMIN);
     if (isUserAdmin) return true;
 
-    if (requiredRoles.some((role) => user.roles.includes(role))) {
+    if (!requiredRoles.some((role) => user.roles.includes(role))) {
       throw new ForbiddenException(
         'Forbidden. User does not have the required role.',
       );

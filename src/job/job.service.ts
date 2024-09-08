@@ -1,6 +1,4 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { CreateJobDto } from './dto/create-job.dto';
-import { UpdateJobDto } from './dto/update-job.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import {
@@ -8,6 +6,7 @@ import {
   IndividualJobFromBatch,
   Job,
   JobInfoInterface,
+  JobJson,
   ParsedContent,
 } from './entities/job.entity';
 import { JobTypeService } from '../job-type/job-type.service';
@@ -18,8 +17,6 @@ import { Cron } from '@nestjs/schedule';
 import { BatchStatusEnum } from '../batch/entity/batch.entity';
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { JobType } from '../job-type/entities/job-type.entity';
 const path = require('path');
 const fs = require('fs');
 
@@ -46,7 +43,6 @@ export class JobService implements OnApplicationBootstrap {
     }
   }
 
-  // @Cron('0 */1 * * *')
   async createBatchJob() {
     const response = await this.buildJsonLd();
     if (response === null) {
@@ -62,14 +58,12 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   @Cron('*/10 * * * * *')
-  // @Cron('20 */6 * * *')
   async checkBatches() {
     // Get all the successfully completed batches
     const allResponses = await this.batchService.checkPendingBatchJobs();
     if (!allResponses) return;
     for (const job of allResponses) {
       const completeJob = this.processJobObject(job);
-      console.log(completeJob);
       await this.updateFromCompleteJobParse(completeJob);
     }
     await this.sendDiscordNewJobMessage();
@@ -94,10 +88,6 @@ export class JobService implements OnApplicationBootstrap {
     };
 
     return object;
-  }
-
-  create(createJobDto: CreateJobDto) {
-    return 'This action adds a new job';
   }
 
   async addJobsByBot(jobTypeId: string, jobs: JobInfoInterface[]) {
@@ -134,13 +124,6 @@ export class JobService implements OnApplicationBootstrap {
       });
       console.log(`${jobEntity.jobId} added`);
     }
-    // await this.buildJsonLd();
-    // const batch = await this.openAISendJSON();
-    // await this.batchService.create({
-    //   id: batch.id,
-    //   status: BatchStatusEnum.VALIDATING,
-    //   filename: batch.input_file_id,
-    // });
   }
 
   async scanAvailableJobs(): Promise<Job[]> {
@@ -173,7 +156,7 @@ export class JobService implements OnApplicationBootstrap {
     const jsonJobsArray = [];
     // Loop through
     for (const job of newJobs) {
-      const jsonJob = await this.buildJobJson(job);
+      const jsonJob = this.buildJobJson(job);
       jsonJobsArray.push(jsonJob);
     }
     // Convert into JSONLD
@@ -222,7 +205,7 @@ export class JobService implements OnApplicationBootstrap {
     return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType.user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType.user.description}. The CV helps but the description gives a more recent telling of what the user is thinking.`;
   }
 
-  async buildJobJson(job: Job) {
+  buildJobJson(job: Job): JobJson {
     return {
       custom_id: job.jobId,
       method: 'POST',
@@ -289,7 +272,7 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   async findAll() {
-    return this.jobRepository.find({})
+    return this.jobRepository.find({});
   }
 
   async findAllSuitableJobs(userId: string) {
@@ -378,14 +361,6 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} job`;
-  }
-
-  update(id: number, updateJobDto: UpdateJobDto) {
-    return `This action updates a #${id} job`;
-  }
-
   async updateFromCompleteJobParse(completeJob: CompleteJobParse) {
     return this.jobRepository.update(
       { jobId: completeJob.jobId },
@@ -419,9 +394,5 @@ export class JobService implements OnApplicationBootstrap {
     jobEntity.applied = status;
     console.log(jobEntity);
     return this.jobRepository.save(jobEntity);
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} job`;
   }
 }

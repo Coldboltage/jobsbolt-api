@@ -34,27 +34,6 @@ export class JobController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @Post()
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Add a new job to Jobsbolt. (Admin only)',
-  })
-  @ApiOkResponse({
-    description: 'Added Job.',
-    type: [Job],
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized. Invalid or missing token.',
-  })
-  @ApiForbiddenResponse({
-    description: 'Forbidden. User does not have the required role.',
-  })
-  create(@Body() createJobDto: CreateJobDto) {
-    return this.jobService.create(createJobDto);
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
   @Post('by-worker/:id')
   @ApiBearerAuth()
   @ApiOperation({
@@ -92,7 +71,7 @@ export class JobController {
   @ApiForbiddenResponse({
     description: 'Forbidden. User does not have the required role.',
   })
-  findAll() {
+  findAll(): Promise<Job[]> {
     return this.jobService.findAll();
   }
 
@@ -188,48 +167,6 @@ export class JobController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @Get(':id')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Find a single job using the actual job record id (Admin only)',
-  })
-  @ApiOkResponse({
-    description: 'Job found.',
-    type: [Job],
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized. Invalid or missing token.',
-  })
-  @ApiForbiddenResponse({
-    description: 'Forbidden. User does not have the required role.',
-  })
-  findOne(@Param('id') id: string) {
-    return this.jobService.findOne(+id);
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @Patch(':id')
-  @ApiOperation({
-    summary:
-      'Find a single job using the actual job record id and update said job (Admin only)',
-  })
-  @ApiOkResponse({
-    description: 'Job updated.',
-    type: [Job],
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized. Invalid or missing token.',
-  })
-  @ApiForbiddenResponse({
-    description: 'Forbidden. User does not have the required role.',
-  })
-  update(@Param('id') id: string, @Body() updateJobDto: UpdateJobDto) {
-    return this.jobService.update(+id, updateJobDto);
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
   @Patch('application-state/:jobId/:state')
   @ApiBearerAuth()
   @ApiOperation({
@@ -252,26 +189,5 @@ export class JobController {
     @Param('jobId') jobId: string,
   ) {
     return this.jobService.updateJobApplication(req.user.userId, jobId, state);
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @Delete(':id')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Delete a job from Jobsbolt (Admin only)',
-  })
-  @ApiOkResponse({
-    description: 'Job deleted.',
-    type: [Job],
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized. Invalid or missing token.',
-  })
-  @ApiForbiddenResponse({
-    description: 'Forbidden. User does not have the required role.',
-  })
-  remove(@Param('id') id: string) {
-    return this.jobService.remove(+id);
   }
 }

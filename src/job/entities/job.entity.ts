@@ -129,6 +129,9 @@ export interface IndividualJobFromBatchChoice {
 
 export interface ChatCompletionMessage {
   role: string;
+  /**
+   * A JSON string that can be parsed into a ParsedContent object.
+   */
   content: string;
 }
 
@@ -150,4 +153,45 @@ export interface ParsedContent {
   is_suitable: boolean;
   conciseDescription: string;
   conciseSuited: string;
+}
+
+// BUILD JSON
+
+export interface JobAnalysis {
+  analysis: string;
+  is_suitable: boolean;
+  conciseDescription: string;
+  conciseSuited: string;
+}
+
+export interface JobJson {
+  custom_id: string;
+  method: string;
+  url: string;
+  body: {
+    model: string;
+    messages: Array<{
+      role: 'system' | 'user';
+      content: string;
+    }>;
+    response_format: {
+      type: string;
+      json_schema: {
+        name: string;
+        strict: boolean;
+        schema: {
+          type: string;
+          properties: {
+            analysis: { type: string; description: string };
+            is_suitable: { type: string; description: string };
+            conciseDescription: { type: string; description: string };
+            conciseSuited: { type: string; description: string };
+          };
+          required: string[];
+          additionalProperties: boolean;
+        };
+      };
+    };
+    max_tokens: number;
+  };
 }

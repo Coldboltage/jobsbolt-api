@@ -8,11 +8,17 @@ import {
   Delete,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { Role } from '../auth/role.enum';
 
 @Controller('user')
 export class UserController {
@@ -23,13 +29,12 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
   @Post('add-cv/:userId')
   @UseInterceptors(FileInterceptor('file'))
-  addCv(
-    @UploadedFile() file: Express.Multer.File,
-    @Param('userId') userId: string,
-  ) {
-    return this.userService.updateUserCV(userId, file);
+  addCv(@UploadedFile() file: Express.Multer.File, @Req() req) {
+    return this.userService.updateUserCV(req.user.userId, file);
   }
 
   @Get()

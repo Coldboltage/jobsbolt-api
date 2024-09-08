@@ -10,27 +10,25 @@ import databaseConfig from './config/database.config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AuthModule } from './auth/auth.module';
 import secretConfig from './config/secret.config';
-import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BatchModule } from './batch/batch.module';
 import { DiscordModule } from './discord/discord.module';
 import generalConfig from './config/general.config';
+import rabbitmqConfig from './config/rabbitmq.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [databaseConfig, secretConfig, generalConfig],
+      load: [databaseConfig, secretConfig, generalConfig, rabbitmqConfig],
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
-    DevtoolsModule.register({
-      http: process.env.NODE_ENV !== 'production',
-    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        return configService.get<PostgresConnectionOptions>('database');
+        const test = configService.get<PostgresConnectionOptions>('database');
+        return test;
       },
     }),
     UserModule,
