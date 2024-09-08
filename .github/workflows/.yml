@@ -30,6 +30,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # Step 4: Run tests
       - name: Run Job Service
         run: npm run test job.service
 
