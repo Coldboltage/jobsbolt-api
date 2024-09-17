@@ -91,7 +91,7 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   async addJobsByBot(jobTypeId: string, jobs: JobInfoInterface[]) {
-    // All jobs rekate to a jobType
+    // // All jobs rekate to a jobType
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
     // Check which jobs exist already
     const allJobsIds = jobs.map((job) => job.jobId);
@@ -106,6 +106,13 @@ export class JobService implements OnApplicationBootstrap {
         (existingJob) => existingJob.jobId === job.jobId,
       );
     });
+
+    // const newJobs = await this.jobRepository
+    //   .createQueryBuilder('job')
+    //   .select('job.jobId')
+    //   .where('job.jobId NOT IN (:...allJobsIds)', { allJobsIds })
+    //   .andWhere('job.jobTypeId = :jobTypeId', { jobTypeId })
+    //   .getMany();
 
     // Create all jobs
     for (const job of newJobs) {
@@ -147,11 +154,12 @@ export class JobService implements OnApplicationBootstrap {
 
     // update scans for jobs
     newJobs.forEach((job) => (job.scannedLast = new Date()));
-    await this.jobRepository.save(newJobs);
 
     if (!newJobs || newJobs.length === 0) {
       return null;
     }
+    await this.jobRepository.save(newJobs);
+
     // House the JSON
     const jsonJobsArray = [];
     // Loop through
@@ -291,6 +299,7 @@ export class JobService implements OnApplicationBootstrap {
         suited: true,
       },
     });
+    console.log(allSuitedJobs.length);
     return allSuitedJobs;
   }
 

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JobService } from './job.service';
 import { createMock } from '@golevelup/ts-jest';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { DeepPartial, IsNull, Repository } from 'typeorm';
 import {
   ChatCompletionMessage,
   CompleteJobParse,
@@ -12,6 +12,7 @@ import {
   IndividualJobFromBatchResponseBody,
   Job,
   JobInfoInterface,
+  JobJson,
   ParsedContent,
 } from './entities/job.entity';
 import { ConfigService } from '@nestjs/config';
@@ -25,9 +26,11 @@ import { User } from '../user/entities/user.entity';
 import OpenAI from 'openai';
 import { Role } from '../auth/role.enum';
 import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
+import { UserService } from '../user/user.service';
+import { DiscordService } from '../discord/discord.service';
+import { Jobs } from 'openai/resources/fine-tuning/jobs/jobs';
 
 const path = require('path');
-// const fs = require('fs');
 
 // Manually mock the OpenAI class
 jest.mock('openai', () => {
@@ -56,6 +59,8 @@ describe('JobService', () => {
   let batchService: BatchService;
   let jobTypeService: JobTypeService;
   let jobRepository: Repository<Job>;
+  let userService: UserService;
+  let discordService: DiscordService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -75,10 +80,12 @@ describe('JobService', () => {
     batchService = module.get<BatchService>(BatchService);
     jobTypeService = module.get<JobTypeService>(JobTypeService);
     jobRepository = module.get<Repository<Job>>(getRepositoryToken(Job));
+    userService = module.get<UserService>(UserService);
+    discordService = module.get<DiscordService>(DiscordService);
   });
 
   const createFullUserWithDetails = () => {
-    const mockJobId = faker.string.uuid();
+    const mockJobId = '123';
     const mockJob: Job = {
       id: faker.string.uuid(),
       jobId: mockJobId,
@@ -129,6 +136,63 @@ describe('JobService', () => {
     mockJobTypeEntity.user = mockUser;
 
     return { mockUser, mockJobTypeEntity, mockJob };
+  };
+
+  const createMockJsonLayout = (mockJob: Job): JobJson => {
+    return {
+      custom_id: mockJob.jobId,
+      method: 'POST',
+      url: '/v1/chat/completions',
+      body: {
+        model: 'gpt-4o-2024-08-06',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
+          },
+          { role: 'user', content: expect.any(String) },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'job_analysis_schema',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                analysis: {
+                  type: 'string',
+                  description:
+                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
+                },
+                is_suitable: {
+                  type: 'boolean',
+                  description:
+                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
+                },
+                conciseDescription: {
+                  type: 'string',
+                  description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
+                },
+                conciseSuited: {
+                  type: 'string',
+                  description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
+                },
+              },
+              required: [
+                'analysis',
+                'is_suitable',
+                'conciseDescription',
+                'conciseSuited',
+              ],
+              additionalProperties: false,
+            },
+          },
+        },
+        max_tokens: 1000,
+      },
+    };
   };
 
   it('should be defined', () => {
@@ -590,6 +654,74 @@ describe('JobService', () => {
     });
   });
 
+  describe('buildJsonLd', () => {
+    const filePath = path.join(__dirname, 'requests.jsonl');
+
+    afterEach(async () => {
+      try {
+        // Check if the file exists asynchronously
+        await fs.access(filePath); // If file does not exist, this will throw an error
+        await fs.unlink(filePath); // Asynchronously delete the file
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          // Ignore the error if the file doesn't exist
+          throw err;
+        }
+      }
+    });
+    it('should create requests.jsonl', async () => {
+      // Arrange
+      const { mockJob } = createFullUserWithDetails();
+      const scannedDate = new Date();
+      const scanAvailableJobsSpy = jest
+        .spyOn(service, 'scanAvailableJobs')
+        .mockResolvedValueOnce([mockJob]);
+
+      mockJob.scannedLast = scannedDate;
+      const jobRepoSaveSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce(mockJob);
+
+      const jsonJob = createMockJsonLayout(mockJob);
+
+      const buildJobJsonSpy = jest
+        .spyOn(service, 'buildJobJson')
+        .mockReturnValueOnce(jsonJob);
+
+      const jsonLFormatJobs = [jsonJob]
+        .map((job) => {
+          console.log(job);
+          return JSON.stringify(job);
+        })
+        .join('\n');
+
+      // Act
+      const response = await service.buildJsonLd();
+      // Assert
+      expect(scanAvailableJobsSpy).toHaveBeenCalled();
+      expect(jobRepoSaveSpy).toHaveBeenCalled();
+      expect(buildJobJsonSpy).toHaveBeenCalled();
+      expect(response).toBeInstanceOf(Buffer);
+      expect(response).toEqual(Buffer.from(jsonLFormatJobs, 'utf-8'));
+      await expect(fs.access(filePath)).resolves.not.toThrow();
+    });
+    it('should return null because of no newJobs', async () => {
+      // Arrange
+      const emptyJobs: Job[] = [];
+      const scanAvailableJobsSpy = jest
+        .spyOn(service, 'scanAvailableJobs')
+        .mockResolvedValueOnce(emptyJobs);
+      const jobRepoSpy = jest.spyOn(jobRepository, 'save');
+      // Act
+      const response = await service.buildJsonLd();
+
+      // Assert
+      expect(scanAvailableJobsSpy).toHaveBeenCalled();
+      expect(jobRepoSpy).not.toHaveBeenCalled();
+      expect(response).toEqual(null);
+    });
+  });
+
   describe('openAISendJSON', () => {
     beforeAll(async () => {
       jest.clearAllMocks(); // Clear any previous mock calls
@@ -608,7 +740,8 @@ describe('JobService', () => {
         await fs.access(filePath); // If file does not exist, this will throw an error
         await fs.unlink(filePath); // Asynchronously delete the file
       } catch (err) {
-        if (err.code !== 'ENOENT') { // Ignore the error if the file doesn't exist
+        if (err.code !== 'ENOENT') {
+          // Ignore the error if the file doesn't exist
           throw err;
         }
       }
@@ -744,78 +877,7 @@ describe('JobService', () => {
 
   describe('buildJobJson', () => {
     const { mockJob } = createFullUserWithDetails();
-    const jsonLayout = {
-      custom_id: mockJob.jobId,
-      method: 'POST',
-      url: '/v1/chat/completions',
-      body: {
-        model: 'gpt-4o-2024-08-06',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
-          },
-          { role: 'user', content: expect.any(String) },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'job_analysis_schema',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                analysis: {
-                  type: 'string',
-                  description:
-                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
-                },
-                is_suitable: {
-                  type: 'boolean',
-                  description:
-                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
-                },
-                conciseDescription: {
-                  type: 'string',
-                  description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
-                },
-                conciseSuited: {
-                  type: 'string',
-                  description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
-                },
-              },
-              required: [
-                'analysis',
-                'is_suitable',
-                'conciseDescription',
-                'conciseSuited',
-              ],
-              additionalProperties: false,
-            },
-          },
-        },
-        max_tokens: 1000,
-      },
-    };
-    // const filePath = path.join(__dirname, 'requests.jsonl');
-    // path.join(__dirname, 'requests.jsonl');
-
-    // beforeEach(() => {
-    //   const jsonLFormatJobs = [jsonLayout]
-    //     .map((job) => {
-    //       console.log(job);
-    //       return JSON.stringify(job);
-    //     })
-    //     .join('\n');
-    //   fs.writeFile(filePath, jsonLFormatJobs);
-    // });
-
-    // afterAll(() => {
-    //   if (fs.existsSync(filePath)) {
-    //     fs.unlinkSync(filePath); // Synchronously deletes the file
-    //   }
-    // });
+    const jsonLayout = createMockJsonLayout(mockJob);
     it('should create the JSON exactly to template', () => {
       // Arrange
       const createContentMessageSpy = jest
@@ -832,6 +894,133 @@ describe('JobService', () => {
   });
 
   describe('sendDiscordNewJobMessage', () => {
-    it.todo('should send job messages to users');
+    it('should send job messages to users', async () => {
+      // Arrange
+      const { mockUser, mockJob } = createFullUserWithDetails();
+
+      mockJob.suited = true;
+      mockJob.notification = false;
+      mockJob.summary = faker.lorem.paragraphs();
+      mockJob.conciseDescription = faker.lorem.paragraph();
+      mockJob.conciseSuited = faker.lorem.sentence();
+
+      const findAllUserUnsendJobsSpy = jest
+        .spyOn(userService, 'findAllUserUnsendJobs')
+        .mockResolvedValueOnce([mockUser]);
+
+      const sendUserNewJobsSpy = jest
+        .spyOn(service, 'sendUserNewJobs')
+        .mockResolvedValueOnce([mockJob]);
+
+      const discordServiceSendMessageSpy = jest.spyOn(
+        discordService,
+        'sendMessage',
+      );
+
+      // Act
+      await service.sendDiscordNewJobMessage();
+      // Assert
+      expect(findAllUserUnsendJobsSpy).toHaveBeenCalled();
+      expect(sendUserNewJobsSpy).toHaveBeenCalled();
+      expect(discordServiceSendMessageSpy).toHaveBeenCalled();
+    });
+
+    it('should not fire sendUserNewJobs/sendMessage', async () => {
+      // Arrange
+      const findAllUserUnsendJobsSpy = jest
+        .spyOn(userService, 'findAllUserUnsendJobs')
+        .mockResolvedValueOnce([]);
+
+      const sendUserNewJobsSpy = jest.spyOn(service, 'sendUserNewJobs');
+
+      const discordServiceSendMessageSpy = jest.spyOn(
+        discordService,
+        'sendMessage',
+      );
+      // Act
+      await service.sendDiscordNewJobMessage();
+      // Assert
+      expect(findAllUserUnsendJobsSpy).toHaveBeenCalled();
+      expect(sendUserNewJobsSpy).not.toHaveBeenCalled();
+      expect(discordServiceSendMessageSpy).not.toHaveBeenCalled();
+    });
   });
+  describe('findAll', () => {
+    it('should fire jobRepository.find with an empty object', async () => {
+      // Arrange
+      const jobsRepoFindSpy = jest.spyOn(jobRepository, 'find');
+      // Act
+      await service.findAll();
+      // Assert
+      expect(jobsRepoFindSpy).toHaveBeenCalled();
+      expect(jobsRepoFindSpy).toHaveBeenCalledWith({});
+    });
+  });
+
+  describe('findAllSuitableJobs', () => {
+    it('should find all suitable jobs with the userId', async () => {
+      // Arrange
+      const { mockUser, mockJob } = createFullUserWithDetails();
+      mockJob.suited = true;
+
+      const jobRepoFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([mockJob]);
+      // Act
+      const response = await service.findAllSuitableJobs(mockUser.id);
+      // Assert
+      expect(response).toEqual([mockJob]);
+      expect(jobRepoFindSpy).toHaveBeenCalled();
+      expect(jobRepoFindSpy).toHaveBeenCalledWith({
+        relations: {
+          jobType: {
+            user: true,
+          },
+        },
+        where: {
+          jobType: {
+            user: {
+              id: mockUser.id,
+            },
+          },
+          suited: true,
+        },
+      });
+    });
+    it('should call jobRepo but return nothing', async () => {
+      // Arrange
+      const { mockUser } = createFullUserWithDetails();
+
+      const jobRepoFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([]);
+
+      // Act
+      const response = await service.findAllSuitableJobs(mockUser.id);
+      // Assert
+      expect(response).toEqual([]);
+      expect(jobRepoFindSpy).toHaveBeenCalled();
+      expect(jobRepoFindSpy).toHaveBeenCalledWith({
+        relations: {
+          jobType: {
+            user: true,
+          },
+        },
+        where: {
+          jobType: {
+            user: {
+              id: mockUser.id,
+            },
+          },
+          suited: true,
+        },
+      });
+    });
+  });
+
+  describe('findAllAppliedJobs', () => {
+    it('should find all jobs for a user with the correct state', async () => {
+
+    })
+  })
 });

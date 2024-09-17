@@ -9,7 +9,6 @@ export default registerAs('database', () => {
     password: process.env.TYPEORM_PASSWORD,
     database: process.env.TYPEORM_DATABASE,
     autoLoadEntities: true,
-    // entities: [User, JobType, Job],
     synchronize: true,
   };
 });
