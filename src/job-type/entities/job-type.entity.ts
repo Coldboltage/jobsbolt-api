@@ -1,8 +1,9 @@
 import {
   Column,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
@@ -25,7 +26,8 @@ export class JobType {
   @ManyToOne(() => User, (user) => user.jobType)
   user: User;
 
-  @OneToMany(() => Job, (job) => job.jobType)
+  @ManyToMany(() => Job, (job) => job.jobType)
+  @JoinTable()
   jobs: Job[];
 
   @Column()

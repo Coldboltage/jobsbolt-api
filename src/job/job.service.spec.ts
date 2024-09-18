@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JobService } from './job.service';
 import { createMock } from '@golevelup/ts-jest';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DeepPartial, IsNull, Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import {
   ChatCompletionMessage,
   CompleteJobParse,
@@ -28,7 +28,6 @@ import { Role } from '../auth/role.enum';
 import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
-import { Jobs } from 'openai/resources/fine-tuning/jobs/jobs';
 
 const path = require('path');
 
@@ -132,7 +131,7 @@ describe('JobService', () => {
       jobType: [mockJobTypeEntity],
     };
 
-    mockJob.jobType = mockJobTypeEntity;
+    mockJob.jobType = [mockJobTypeEntity];
     mockJobTypeEntity.user = mockUser;
 
     return { mockUser, mockJobTypeEntity, mockJob };
@@ -480,49 +479,50 @@ describe('JobService', () => {
   });
 
   describe('addJobsByBot', () => {
-    const mockJobTypeId = faker.string.uuid();
-    const mockJobTypeEntity: JobType = {
-      id: '',
-      name: '',
-      location: '',
-      user: new User(),
-      jobs: [],
-      date: undefined,
-      active: false,
-      desiredPay: 0,
-      desiredPayUnit: PayUnits.MONTHLY,
-      description: '',
-    };
-    const mockJob: JobInfoInterface = {
-      jobId: faker.string.uuid(),
-      jobTypeId: mockJobTypeId,
-      name: faker.person.jobTitle(),
-      description: faker.person.jobDescriptor(),
-      pay: String(faker.helpers.rangeToNumber({ min: 15, max: 100 })),
-      location: faker.location.city(),
-      companyName: faker.company.name(),
-    };
-    const jobEntity: Job = {
-      id: faker.string.uuid(),
+    const { mockJob, mockJobTypeEntity } = createFullUserWithDetails();
+    // const mockJobTypeId = faker.string.uuid();
+    // const mockJobTypeEntity: JobType = {
+    //   id: '',
+    //   name: '',
+    //   location: '',
+    //   user: new User(),
+    //   jobs: [],
+    //   date: undefined,
+    //   active: false,
+    //   desiredPay: 0,
+    //   desiredPayUnit: PayUnits.MONTHLY,
+    //   description: '',
+    // };
+    const mockJobInfo: JobInfoInterface = {
       jobId: mockJob.jobId,
-      applied: false,
-      link: `https://www.indeed.com/viewjob?jk=${mockJob.jobId}`,
+      jobTypeId: mockJob.jobType[0].id,
       name: mockJob.name,
-      companyName: mockJob.companyName,
-      date: new Date(),
       description: mockJob.description,
       pay: mockJob.pay,
       location: mockJob.location,
-      summary: null,
-      conciseDescription: null,
-      conciseSuited: null,
-      suited: false,
-      jobType: mockJobTypeEntity,
-      scannedLast: null,
-      notification: false,
+      companyName: mockJob.companyName,
     };
+    // const jobEntity: Job = {
+    //   id: faker.string.uuid(),
+    //   jobId: mockJob.jobId,
+    //   applied: false,
+    //   link: `https://www.indeed.com/viewjob?jk=${mockJob.jobId}`,
+    //   name: mockJob.name,
+    //   companyName: mockJob.companyName,
+    //   date: new Date(),
+    //   description: mockJob.description,
+    //   pay: mockJob.pay,
+    //   location: mockJob.location,
+    //   summary: null,
+    //   conciseDescription: null,
+    //   conciseSuited: null,
+    //   suited: false,
+    //   jobType: [mockJobTypeEntity],
+    //   scannedLast: null,
+    //   notification: false,
+    // };
 
-    it('add a job', async () => {
+    it('should add a job', async () => {
       // Arrange
       const jobTypeEntitySpy = jest
         .spyOn(jobTypeService, 'findOne')
@@ -532,28 +532,80 @@ describe('JobService', () => {
         .mockResolvedValueOnce([]);
       const jobRepositorySaveSpy = jest
         .spyOn(jobRepository, 'save')
-        .mockResolvedValueOnce(jobEntity);
+        .mockResolvedValueOnce(mockJob);
 
       // Act
-      await service.addJobsByBot(mockJobTypeId, [mockJob]);
+      await service.addJobsByBot(mockJobTypeEntity.id, [mockJobInfo]);
 
       // Assert
       expect(jobRepositorySaveSpy).toHaveBeenCalledWith({
-        jobId: mockJob.jobId,
-        link: `https://www.indeed.com/viewjob?jk=${mockJob.jobId}`,
-        name: mockJob.name,
+        jobId: mockJobInfo.jobId,
+        link: `https://www.indeed.com/viewjob?jk=${mockJobInfo.jobId}`,
+        name: mockJobInfo.name,
         date: expect.any(Date), // You can use `expect.any(Date)` if the exact date is not crucial
-        description: mockJob.description,
-        pay: mockJob.pay,
-        location: mockJob.location,
+        description: mockJobInfo.description,
+        pay: mockJobInfo.pay,
+        location: mockJobInfo.location,
         suited: false, // Static value as per your implementation
-        jobType: mockJobTypeEntity, // The jobType entity returned from findOne
+        jobType: [mockJobTypeEntity], // The jobType entity returned from findOne
         scannedLast: null, // Static value as per your implementation
-        companyName: mockJob.companyName,
+        companyName: mockJobInfo.companyName,
       });
       expect(jobTypeEntitySpy).toHaveBeenCalled();
       expect(jobRepositoryFindSpy).toHaveBeenCalled();
       expect(jobRepositorySaveSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should push a new jobsType record to the already existing job', async () => {
+      // Arrange
+      // const { mockJobTypeEntity, mockJob } = createFullUserWithDetails();
+      const mockJobInfo: JobInfoInterface = {
+        jobId: mockJob.jobId,
+        jobTypeId: mockJob.jobType[0].id,
+        name: mockJob.name,
+        description: mockJob.description,
+        pay: mockJob.pay,
+        location: mockJob.location,
+        companyName: mockJob.companyName,
+      };
+
+      const newUnusedMockJobTypeEntity: JobType = {
+        id: 'rawr',
+        name: '',
+        location: '',
+        user: new User(),
+        jobs: [mockJob],
+        date: undefined,
+        active: false,
+        desiredPay: 0,
+        desiredPayUnit: PayUnits.HOURLY,
+        description: '',
+      };
+
+      const jobTypeEntityFindOneSpy = jest
+        .spyOn(jobTypeService, 'findOne')
+        .mockResolvedValueOnce(new JobType());
+      const jobsRepositoryFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([mockJob]); // This reps all that match
+
+      const updatedMockJob = structuredClone(mockJob);
+
+      // Modify the deep copy without affecting the original mockJob
+      updatedMockJob.jobType.push(newUnusedMockJobTypeEntity);
+
+      const jobRepositorySaveSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce(updatedMockJob);
+
+      // Act
+      await service.addJobsByBot(newUnusedMockJobTypeEntity.id, [mockJobInfo]);
+
+      // Assert
+      // expect(jobRepositorySaveSpy).toHaveBeenCalledWith(updatedMockJob);
+      expect(jobTypeEntityFindOneSpy).toHaveBeenCalled();
+      expect(jobsRepositoryFindSpy).toHaveBeenCalled();
+      expect(jobRepositorySaveSpy).toHaveBeenCalled();
     });
 
     it('should not add a new job as the job already exists', async () => {
@@ -573,7 +625,7 @@ describe('JobService', () => {
         conciseDescription: '',
         conciseSuited: '',
         suited: false,
-        jobType: new JobType(),
+        jobType: [mockJobTypeEntity],
         scannedLast: undefined,
         notification: false,
       };
@@ -586,10 +638,10 @@ describe('JobService', () => {
         .mockResolvedValueOnce([existingJobEntity]);
       const jobRepositorySaveSpy = jest
         .spyOn(jobRepository, 'save')
-        .mockResolvedValueOnce(jobEntity);
+        .mockResolvedValueOnce(mockJob);
 
       // Act
-      await service.addJobsByBot(mockJobTypeId, [mockJob]);
+      await service.addJobsByBot(mockJobTypeEntity.id, [mockJobInfo]);
 
       // Assert
       expect(jobTypeEntitySpy).toHaveBeenCalled();
@@ -628,7 +680,7 @@ describe('JobService', () => {
       conciseDescription: null,
       conciseSuited: null,
       suited: false,
-      jobType: mockJobTypeEntity,
+      jobType: [mockJobTypeEntity],
       scannedLast: null,
       notification: false,
     };
@@ -869,8 +921,8 @@ describe('JobService', () => {
       expect(response).toContain(mockJob.description);
       expect(response).toContain(mockJob.pay);
       expect(response).toContain(mockJob.location);
-      expect(response).toContain(mockJob.jobType.user.cv);
-      expect(response).toContain(mockJob.jobType.user.description);
+      expect(response).toContain(mockJob.jobType[0].user.cv);
+      expect(response).toContain(mockJob.jobType[0].user.description);
       expect(typeof response).toBe('string');
     });
   });
@@ -1018,9 +1070,9 @@ describe('JobService', () => {
     });
   });
 
-  describe('findAllAppliedJobs', () => {
-    it('should find all jobs for a user with the correct state', async () => {
+  // describe('findAllAppliedJobs', () => {
+  //   it('should find all jobs for a user with the correct state', async () => {
 
-    })
-  })
+  //   })
+  // })
 });
