@@ -1,8 +1,9 @@
 import {
   Column,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
@@ -11,7 +12,7 @@ import { Job } from '../../job/entities/job.entity';
 import { PayUnits } from '../types';
 
 @Entity()
-@Unique(['name', 'location']) // We don't wannt the name and location to be the same. Wasteful
+@Unique(['name', 'location', 'user']) // Prevent duplicate JobType entries for the same user with identical name and location
 export class JobType {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -25,7 +26,8 @@ export class JobType {
   @ManyToOne(() => User, (user) => user.jobType)
   user: User;
 
-  @OneToMany(() => Job, (job) => job.jobType)
+  @ManyToMany(() => Job, (job) => job.jobType)
+  @JoinTable()
   jobs: Job[];
 
   @Column()

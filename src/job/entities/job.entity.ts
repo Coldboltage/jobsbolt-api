@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { JobType } from '../../job-type/entities/job-type.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -62,9 +62,9 @@ export class Job {
   @ApiProperty()
   suited: boolean;
 
-  @ManyToOne(() => JobType, (jobType) => jobType.jobs)
+  @ManyToMany(() => JobType, (jobType) => jobType.jobs)
   @ApiProperty({ type: () => JobType })
-  jobType: JobType;
+  jobType: JobType[];
 
   @Column('date', { nullable: true })
   @ApiProperty()

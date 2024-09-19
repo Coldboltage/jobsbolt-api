@@ -13,7 +13,6 @@ import { JobType } from './entities/job-type.entity';
 import { Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { ClientProxy } from '@nestjs/microservices';
-import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()

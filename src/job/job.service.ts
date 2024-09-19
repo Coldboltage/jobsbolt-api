@@ -93,19 +93,39 @@ export class JobService implements OnApplicationBootstrap {
   async addJobsByBot(jobTypeId: string, jobs: JobInfoInterface[]) {
     // // All jobs rekate to a jobType
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
+    console.log(jobTypeEntity)
     // Check which jobs exist already
     const allJobsIds = jobs.map((job) => job.jobId);
 
+    // All Jobs currently in database checked and retrieved
     const existingJobRecords = await this.jobRepository.find({
       where: { jobId: In(allJobsIds) },
-      select: ['jobId'],
+      select: ['jobId', 'jobType'],
     });
 
     const newJobs = jobs.filter((job) => {
-      return !existingJobRecords.some(
-        (existingJob) => existingJob.jobId === job.jobId,
-      );
+      return !existingJobRecords.some((existingJob) => {
+        return existingJob.jobId === job.jobId;
+      });
     });
+
+
+    const existingJobDifferentJobType = existingJobRecords.filter(
+      (existingJob) => {
+        return jobs.some((job) => {
+          if (
+            existingJob.jobId === job.jobId &&
+            !existingJob.jobType.some(
+              (existingJobType) => existingJobType.id === jobTypeId,
+            )
+          ) {
+            return true;
+          } else {
+            return false;
+          }
+        });
+      },
+    );
 
     // const newJobs = await this.jobRepository
     //   .createQueryBuilder('job')
@@ -125,11 +145,22 @@ export class JobService implements OnApplicationBootstrap {
         pay: job.pay,
         location: job.location,
         suited: false,
-        jobType: jobTypeEntity,
+        jobType: [jobTypeEntity],
         scannedLast: null,
         companyName: job.companyName,
       });
       console.log(`${jobEntity.jobId} added`);
+    }
+
+    // console.log(existingJobDifferentJobType.length)
+
+    for (const existingJob of existingJobDifferentJobType) {
+      existingJob.jobType.push(jobTypeEntity);
+      const updatedExistingJobAndType =
+        await this.jobRepository.save(existingJob);
+      console.log(
+        `${updatedExistingJobAndType.jobId} jobType pushed and updated`,
+      );
     }
   }
 
@@ -210,7 +241,7 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   createContentMessage(job: Job) {
-    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType.user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType.user.description}. The CV helps but the description gives a more recent telling of what the user is thinking.`;
+    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType[0].user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType[0].user.description}. The CV helps but the description gives a more recent telling of what the user is thinking.`;
   }
 
   buildJobJson(job: Job): JobJson {
