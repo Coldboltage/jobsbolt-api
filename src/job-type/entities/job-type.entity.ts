@@ -12,7 +12,7 @@ import { Job } from '../../job/entities/job.entity';
 import { PayUnits } from '../types';
 
 @Entity()
-@Unique(['name', 'location']) // We don't wannt the name and location to be the same. Wasteful
+@Unique(['name', 'location', 'user']) // Prevent duplicate JobType entries for the same user with identical name and location
 export class JobType {
   @PrimaryGeneratedColumn('uuid')
   id: string;
