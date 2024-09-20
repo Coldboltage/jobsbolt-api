@@ -4,7 +4,7 @@ import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 
 @Injectable()
 export class CoverLetterService {
-  create(createCoverLetterDto: CreateCoverLetterDto) {
+  async create(createCoverLetterDto: CreateCoverLetterDto) {
     return 'This action adds a new coverLetter';
   }
 

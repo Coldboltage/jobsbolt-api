@@ -70,7 +70,7 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   processJobObject(job: IndividualJobFromBatch): CompleteJobParse {
-    const jobId = job.custom_id;
+    const indeedId = job.custom_id;
     const content: ParsedContent = JSON.parse(
       job.response.body.choices[0].message.content,
     );
@@ -80,7 +80,7 @@ export class JobService implements OnApplicationBootstrap {
     const conciseSuited = content.conciseSuited;
 
     const object: CompleteJobParse = {
-      jobId,
+      indeedId,
       summary,
       suited,
       conciseDescription,
@@ -95,11 +95,11 @@ export class JobService implements OnApplicationBootstrap {
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
     console.log(jobTypeEntity);
     // Check which jobs exist already
-    const allJobsIds = jobs.map((job) => job.jobId);
+    const allJobsIds = jobs.map((job) => job.indeedId);
 
     // All Jobs currently in database checked and retrieved
     const existingJobRecords = await this.jobRepository.find({
-      where: { jobId: In(allJobsIds) },
+      where: { indeedId: In(allJobsIds) },
       relations: {
         jobType: true,
       },
@@ -107,7 +107,7 @@ export class JobService implements OnApplicationBootstrap {
 
     const newJobs = jobs.filter((job) => {
       return !existingJobRecords.some((existingJob) => {
-        return existingJob.jobId === job.jobId;
+        return existingJob.indeedId === job.indeedId;
       });
     });
 
@@ -115,7 +115,7 @@ export class JobService implements OnApplicationBootstrap {
       (existingJob) =>
         jobs.some(
           (job) =>
-            existingJob.jobId === job.jobId && // Check if the job IDs match
+            existingJob.indeedId === job.indeedId && // Check if the job IDs match
             !existingJob.jobType.some(
               (existingJobType) => existingJobType.id === jobTypeId,
             ), // Ensure it's not the same jobType
@@ -124,16 +124,16 @@ export class JobService implements OnApplicationBootstrap {
 
     // const newJobs = await this.jobRepository
     //   .createQueryBuilder('job')
-    //   .select('job.jobId')
-    //   .where('job.jobId NOT IN (:...allJobsIds)', { allJobsIds })
+    //   .select('job.indeedId')
+    //   .where('job.indeedId NOT IN (:...allJobsIds)', { allJobsIds })
     //   .andWhere('job.jobTypeId = :jobTypeId', { jobTypeId })
     //   .getMany();
 
     // Create all jobs
     for (const job of newJobs) {
       const jobEntity = await this.jobRepository.save({
-        jobId: job.jobId,
-        link: `https://www.indeed.com/viewjob?jk=${job.jobId}`,
+        indeedId: job.indeedId,
+        link: `https://www.indeed.com/viewjob?jk=${job.indeedId}`,
         name: job.name,
         date: new Date(),
         description: job.description,
@@ -144,7 +144,7 @@ export class JobService implements OnApplicationBootstrap {
         scannedLast: null,
         companyName: job.companyName,
       });
-      console.log(`${jobEntity.jobId} added`);
+      console.log(`${jobEntity.indeedId} added`);
     }
 
     if (existingJobDifferentJobType.length > 0) {
@@ -155,7 +155,7 @@ export class JobService implements OnApplicationBootstrap {
         const updatedExistingJobAndType =
           await this.jobRepository.save(existingJob);
         console.log(
-          `${updatedExistingJobAndType.jobId} jobType pushed and updated`,
+          `${updatedExistingJobAndType.indeedId} jobType pushed and updated`,
         );
       }
     }
@@ -243,7 +243,7 @@ export class JobService implements OnApplicationBootstrap {
 
   buildJobJson(job: Job): JobJson {
     return {
-      custom_id: job.jobId,
+      custom_id: job.indeedId,
       method: 'POST',
       url: '/v1/chat/completions',
       body: {
@@ -311,13 +311,13 @@ export class JobService implements OnApplicationBootstrap {
     return this.jobRepository.find({});
   }
 
-  async findOne(jobId) {
+  async findOne(indeedId) {
     return this.jobRepository.findOne({
       relations: {
         jobType: true,
       },
       where: {
-        id: jobId,
+        id: indeedId,
       },
     });
   }
@@ -411,7 +411,7 @@ export class JobService implements OnApplicationBootstrap {
 
   async updateFromCompleteJobParse(completeJob: CompleteJobParse) {
     return this.jobRepository.update(
-      { jobId: completeJob.jobId },
+      { indeedId: completeJob.indeedId },
       {
         summary: completeJob.summary,
         suited: completeJob.suited,
@@ -422,7 +422,7 @@ export class JobService implements OnApplicationBootstrap {
     );
   }
 
-  async updateJobApplication(userId: string, jobId: string, status: boolean) {
+  async updateJobApplication(userId: string, indeedId: string, status: boolean) {
     const jobEntity = await this.jobRepository.findOne({
       relations: {
         jobType: {
@@ -430,7 +430,7 @@ export class JobService implements OnApplicationBootstrap {
         },
       },
       where: {
-        jobId,
+        indeedId,
         jobType: {
           user: {
             id: userId,

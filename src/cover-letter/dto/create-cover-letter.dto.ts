@@ -1,1 +1,3 @@
-export class CreateCoverLetterDto {}
+export class CreateCoverLetterDto {
+
+}

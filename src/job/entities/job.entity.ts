@@ -5,13 +5,13 @@ import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 
 @Entity()
 export class Job {
-  @PrimaryGeneratedColumn('uuid') // Fairly sure we can't have two of the same jobId so we'll use this
+  @PrimaryGeneratedColumn('uuid') // Fairly sure we can't have two of the same indeedId so we'll use this
   @ApiProperty()
   id: string;
 
   @Column()
   @ApiProperty()
-  jobId: string;
+  indeedId: string;
 
   @Column({ default: false })
   @ApiProperty()
@@ -84,7 +84,7 @@ export class JobInfoInterface {
     format: 'uuidv4',
     description: 'Unique Identifer for job record',
   })
-  jobId: string;
+  indeedId: string;
 
   @ApiProperty()
   jobTypeId: string;
@@ -145,7 +145,7 @@ export interface IndividualJobFromBatchResponseBody {
 }
 
 export interface CompleteJobParse {
-  jobId: string;
+  indeedId: string;
   summary: string;
   suited: boolean;
   conciseDescription: string;

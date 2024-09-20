@@ -45,7 +45,7 @@ describe('JobController', () => {
       await controller.byBot('123', {
         jobs: [
           {
-            jobId: '123e4567-e89b-12d3-a456-426614174000', // Example UUIDv4 format
+            indeedId: '123e4567-e89b-12d3-a456-426614174000', // Example UUIDv4 format
             jobTypeId: 'abc123',
             name: 'Software Developer',
             description: 'Develop and maintain software applications.',

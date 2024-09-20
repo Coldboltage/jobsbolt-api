@@ -84,12 +84,12 @@ describe('JobService', () => {
   });
 
   const createFullUserWithDetails = () => {
-    const mockJobId = '123';
+    const mockindeedId = '123';
     const mockJob: Job = {
       id: faker.string.uuid(),
-      jobId: mockJobId,
+      indeedId: mockindeedId,
       applied: false,
-      link: `https://www.indeed.com/viewjob?jk=${mockJobId}`,
+      link: `https://www.indeed.com/viewjob?jk=${mockindeedId}`,
       name: faker.person.jobTitle(),
       companyName: faker.company.name(),
       date: new Date(),
@@ -139,7 +139,7 @@ describe('JobService', () => {
 
   const createMockJsonLayout = (mockJob: Job): JobJson => {
     return {
-      custom_id: mockJob.jobId,
+      custom_id: mockJob.indeedId,
       method: 'POST',
       url: '/v1/chat/completions',
       body: {
@@ -357,7 +357,7 @@ describe('JobService', () => {
         .mockResolvedValueOnce([mockAllResponses]);
 
       const mockCompleteJob: CompleteJobParse = {
-        jobId: '',
+        indeedId: '',
         summary: '',
         suited: false,
         conciseDescription: '',
@@ -443,7 +443,7 @@ describe('JobService', () => {
       );
 
       const answer: CompleteJobParse = {
-        jobId: mockJob.custom_id,
+        indeedId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: mockContent.is_suitable,
         conciseDescription: mockContent.conciseDescription,
@@ -465,7 +465,7 @@ describe('JobService', () => {
       );
 
       const answer: CompleteJobParse = {
-        jobId: mockJob.custom_id,
+        indeedId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: jobSuitedState,
         conciseDescription: mockContent.conciseDescription,
@@ -494,7 +494,7 @@ describe('JobService', () => {
     //   description: '',
     // };
     const mockJobInfo: JobInfoInterface = {
-      jobId: mockJob.jobId,
+      indeedId: mockJob.indeedId,
       jobTypeId: mockJob.jobType[0].id,
       name: mockJob.name,
       description: mockJob.description,
@@ -504,9 +504,9 @@ describe('JobService', () => {
     };
     // const jobEntity: Job = {
     //   id: faker.string.uuid(),
-    //   jobId: mockJob.jobId,
+    //   indeedId: mockJob.indeedId,
     //   applied: false,
-    //   link: `https://www.indeed.com/viewjob?jk=${mockJob.jobId}`,
+    //   link: `https://www.indeed.com/viewjob?jk=${mockJob.indeedId}`,
     //   name: mockJob.name,
     //   companyName: mockJob.companyName,
     //   date: new Date(),
@@ -539,8 +539,8 @@ describe('JobService', () => {
 
       // Assert
       expect(jobRepositorySaveSpy).toHaveBeenCalledWith({
-        jobId: mockJobInfo.jobId,
-        link: `https://www.indeed.com/viewjob?jk=${mockJobInfo.jobId}`,
+        indeedId: mockJobInfo.indeedId,
+        link: `https://www.indeed.com/viewjob?jk=${mockJobInfo.indeedId}`,
         name: mockJobInfo.name,
         date: expect.any(Date), // You can use `expect.any(Date)` if the exact date is not crucial
         description: mockJobInfo.description,
@@ -560,7 +560,7 @@ describe('JobService', () => {
       // Arrange
       // const { mockJobTypeEntity, mockJob } = createFullUserWithDetails();
       const mockJobInfo: JobInfoInterface = {
-        jobId: mockJob.jobId,
+        indeedId: mockJob.indeedId,
         jobTypeId: mockJob.jobType[0].id,
         name: mockJob.name,
         description: mockJob.description,
@@ -612,7 +612,7 @@ describe('JobService', () => {
       // Arrange
       const existingJobEntity: Job = {
         id: '',
-        jobId: mockJob.jobId,
+        indeedId: mockJob.indeedId,
         applied: false,
         link: '',
         name: '',
@@ -651,7 +651,7 @@ describe('JobService', () => {
   });
 
   describe('scanAvailableJobs', () => {
-    const mockJobId = faker.string.uuid();
+    const mockindeedId = faker.string.uuid();
     const mockJobTypeEntity: JobType = {
       id: '',
       name: '',
@@ -667,9 +667,9 @@ describe('JobService', () => {
 
     const jobEntity: Job = {
       id: faker.string.uuid(),
-      jobId: mockJobId,
+      indeedId: mockindeedId,
       applied: false,
-      link: `https://www.indeed.com/viewjob?jk=${mockJobId}`,
+      link: `https://www.indeed.com/viewjob?jk=${mockindeedId}`,
       name: faker.person.jobTitle(),
       companyName: faker.company.name(),
       date: new Date(),
@@ -801,7 +801,7 @@ describe('JobService', () => {
 
     const { mockJob } = createFullUserWithDetails();
     const jsonLayout = {
-      custom_id: mockJob.jobId,
+      custom_id: mockJob.indeedId,
       method: 'POST',
       url: '/v1/chat/completions',
       body: {
