@@ -28,6 +28,7 @@ import { Role } from '../auth/role.enum';
 import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
+import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
 
 const path = require('path');
 
@@ -103,6 +104,7 @@ describe('JobService', () => {
       jobType: null,
       scannedLast: null,
       notification: false,
+      coverLetter: new CoverLetter(),
     };
 
     const mockJobTypeEntity: JobType = {
@@ -628,6 +630,7 @@ describe('JobService', () => {
         jobType: [mockJobTypeEntity],
         scannedLast: undefined,
         notification: false,
+        coverLetter: new CoverLetter(),
       };
 
       const jobTypeEntitySpy = jest
@@ -683,6 +686,7 @@ describe('JobService', () => {
       jobType: [mockJobTypeEntity],
       scannedLast: null,
       notification: false,
+      coverLetter: new CoverLetter(),
     };
     it('should find all jobs available for a scan', async () => {
       // Arrange

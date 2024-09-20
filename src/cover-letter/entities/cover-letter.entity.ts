@@ -6,7 +6,7 @@ export class CoverLetter {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: true })
+  @Column()
   userPitch: string;
 
   @Column({ nullable: true })
