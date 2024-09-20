@@ -19,6 +19,7 @@ import { validateDatabaseEnv } from './config/database/database.schema';
 import { validateGeneralEnv } from './config/general/general.schema';
 import { validateSecretEnv } from './config/secret/secret.schema';
 import { validateRabbitmqEnv } from './config/rabbitmq/rabbitmq.schema';
+import { CoverLetterModule } from './cover-letter/cover-letter.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { validateRabbitmqEnv } from './config/rabbitmq/rabbitmq.schema';
     AuthModule,
     BatchModule,
     DiscordModule,
+    CoverLetterModule,
   ],
   controllers: [AppController],
   providers: [AppService],
