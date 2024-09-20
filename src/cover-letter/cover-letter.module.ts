@@ -6,4 +6,4 @@ import { CoverLetterController } from './cover-letter.controller';
   controllers: [CoverLetterController],
   providers: [CoverLetterService],
 })
-export class CoverLetterModule {}
+export class CoverLetterModule { }

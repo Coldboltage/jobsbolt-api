@@ -1,11 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { CoverLetterService } from './cover-letter.service';
 import { CreateCoverLetterDto } from './dto/create-cover-letter.dto';
 import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 
 @Controller('cover-letter')
 export class CoverLetterController {
-  constructor(private readonly coverLetterService: CoverLetterService) {}
+  constructor(private readonly coverLetterService: CoverLetterService) { }
 
   @Post()
   create(@Body() createCoverLetterDto: CreateCoverLetterDto) {
@@ -23,7 +31,10 @@ export class CoverLetterController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCoverLetterDto: UpdateCoverLetterDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateCoverLetterDto: UpdateCoverLetterDto,
+  ) {
     return this.coverLetterService.update(+id, updateCoverLetterDto);
   }
 

@@ -1,6 +1,7 @@
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { JobType } from '../../job-type/entities/job-type.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 
 @Entity()
 export class Job {
@@ -55,6 +56,9 @@ export class Job {
   @Column({ nullable: true })
   @ApiProperty()
   conciseSuited: string;
+
+  @OneToOne(() => CoverLetter, (coverLetter) => coverLetter.job)
+  coverLetter: CoverLetter;
 
   // Management
 
