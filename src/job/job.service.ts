@@ -93,14 +93,16 @@ export class JobService implements OnApplicationBootstrap {
   async addJobsByBot(jobTypeId: string, jobs: JobInfoInterface[]) {
     // // All jobs rekate to a jobType
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
-    console.log(jobTypeEntity)
+    console.log(jobTypeEntity);
     // Check which jobs exist already
     const allJobsIds = jobs.map((job) => job.jobId);
 
     // All Jobs currently in database checked and retrieved
     const existingJobRecords = await this.jobRepository.find({
       where: { jobId: In(allJobsIds) },
-      select: ['jobId', 'jobType'],
+      relations: {
+        jobType: true,
+      },
     });
 
     const newJobs = jobs.filter((job) => {
@@ -109,22 +111,15 @@ export class JobService implements OnApplicationBootstrap {
       });
     });
 
-
     const existingJobDifferentJobType = existingJobRecords.filter(
-      (existingJob) => {
-        return jobs.some((job) => {
-          if (
-            existingJob.jobId === job.jobId &&
+      (existingJob) =>
+        jobs.some(
+          (job) =>
+            existingJob.jobId === job.jobId && // Check if the job IDs match
             !existingJob.jobType.some(
               (existingJobType) => existingJobType.id === jobTypeId,
-            )
-          ) {
-            return true;
-          } else {
-            return false;
-          }
-        });
-      },
+            ), // Ensure it's not the same jobType
+        ),
     );
 
     // const newJobs = await this.jobRepository
@@ -152,15 +147,17 @@ export class JobService implements OnApplicationBootstrap {
       console.log(`${jobEntity.jobId} added`);
     }
 
-    // console.log(existingJobDifferentJobType.length)
-
-    for (const existingJob of existingJobDifferentJobType) {
-      existingJob.jobType.push(jobTypeEntity);
-      const updatedExistingJobAndType =
-        await this.jobRepository.save(existingJob);
-      console.log(
-        `${updatedExistingJobAndType.jobId} jobType pushed and updated`,
-      );
+    if (existingJobDifferentJobType.length > 0) {
+      console.log('adding existing job');
+      for (const existingJob of existingJobDifferentJobType) {
+        existingJob.jobType.push(jobTypeEntity);
+        console.log(existingJob)
+        const updatedExistingJobAndType =
+          await this.jobRepository.save(existingJob);
+        console.log(
+          `${updatedExistingJobAndType.jobId} jobType pushed and updated`,
+        );
+      }
     }
   }
 
@@ -312,6 +309,17 @@ export class JobService implements OnApplicationBootstrap {
 
   async findAll() {
     return this.jobRepository.find({});
+  }
+
+  async findOne(jobId) {
+    return this.jobRepository.findOne({
+      relations: {
+        jobType: true,
+      },
+      where: {
+        id: jobId,
+      },
+    });
   }
 
   async findAllSuitableJobs(userId: string) {

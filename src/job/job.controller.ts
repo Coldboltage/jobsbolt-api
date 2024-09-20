@@ -53,6 +53,11 @@ export class JobController {
     return this.jobService.addJobsByBot(id, createJobDto.jobs);
   }
 
+  @Get(':id')
+  findOne(@Param('id') jobId: string) {
+    return this.jobService.findOne(jobId)
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Get()
