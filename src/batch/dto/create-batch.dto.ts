@@ -1,5 +1,5 @@
 import { IsEnum, IsString } from 'class-validator';
-import { BatchStatusEnum } from '../entity/batch.entity';
+import { BatchStatusEnum, BatchType } from '../entity/batch.entity';
 
 export class CreateBatchDto {
   @IsString()
@@ -10,4 +10,7 @@ export class CreateBatchDto {
 
   @IsString()
   filename: string;
+
+  @IsEnum(BatchType)
+  type: BatchType;
 }

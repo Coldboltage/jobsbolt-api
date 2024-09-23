@@ -20,6 +20,7 @@ import { validateGeneralEnv } from './config/general/general.schema';
 import { validateSecretEnv } from './config/secret/secret.schema';
 import { validateRabbitmqEnv } from './config/rabbitmq/rabbitmq.schema';
 import { CoverLetterModule } from './cover-letter/cover-letter.module';
+import { UtilsModule } from './utils/utils.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { CoverLetterModule } from './cover-letter/cover-letter.module';
     BatchModule,
     DiscordModule,
     CoverLetterModule,
+    UtilsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
