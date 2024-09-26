@@ -6,6 +6,7 @@ import {
 } from '../cover-letter/entities/cover-letter.entity';
 import { Job, JobJson } from '../job/entities/job.entity';
 import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 const path = require('path');
 const fs = require('fs');
 
@@ -18,17 +19,21 @@ export class UtilsService {
   }
 
   createCoverLetterMessage(coverLetter: CoverLetter) {
-    return `I am requesting a personalized cover letter based on the following information:
+    return `
+I am requesting a personalized cover letter based on the following details. Please ensure the generated letter closely follows the user's writing style and tone, whether it's formal or informal, while being grammatically correct and concise:
 
-1. **Base Cover Letter**: This is an example of how I write my cover letters. It reflects my writing style and tone, so the generated cover letter should closely follow this template while being grammatically correct. Please ensure the generated letter mimics my voice and style. Here is my base cover letter: ${coverLetter.job.jobType[0].user.baseCoverLetter}.
+- Base Cover Letter: Use the style and tone from the user's base cover letter provided. The generated cover letter should closely mimic the user's voice—whether it's formal, informal, direct, or more professional. Here is the base cover letter: ${coverLetter.job.jobType[0].user.baseCoverLetter}.
 
-2. **My CV**: Use the relevant details from my CV to align my skills, experiences, and accomplishments with the job description provided. The generated letter should emphasize where my qualifications match the job requirements. Here is my CV: ${coverLetter.job.jobType[0].user.cv}.
+- CV: Use relevant details from the user's CV to align their skills, experiences, and accomplishments with the job description. The generated letter should emphasize where their qualifications match the job requirements and address any key areas that may be missing from the base cover letter. Here is the user's CV: ${coverLetter.job.jobType[0].user.cv}.
 
-3. **Job Description**: This is the job I am applying for. Please tailor the cover letter to match the key requirements and qualifications mentioned in the job description. Here is the job description: ${coverLetter.job.description}.
+- Job Description: Tailor the cover letter to directly address the key requirements and qualifications mentioned in the job description. Focus on how the user’s experience matches the specific needs of the role. Here is the job description: ${coverLetter.job.description}.
 
-4. **My Pitch**: This is my unfiltered pitch, where I express in my own words why I am a strong fit for this position. Use this pitch to infuse the letter with my personal touch and feelings about the role. Here is my pitch: ${coverLetter.userPitch}.
+- User Pitch: This is the user's unfiltered pitch, where they express in their own words why they are a strong fit for the position. Use this pitch to infuse the cover letter with the user's personal touch and feelings about the role, staying consistent with their natural tone (whether formal or informal). Here is the user's pitch: ${coverLetter.userPitch}.
 
-**Goal**: Using this information, generate a cover letter that reflects my writing style and voice while highlighting my CV’s alignment with the job description. Ensure the letter is personalized, professional, and speaks to why I am a strong fit for the role.`;
+User Talking Style: Adhere to the user's specific talking and writing style as provided in the variable. Ensure the generated text reflects the natural tone, phrasing, and style from the given input. ${coverLetter.job.jobType[0].user.userTalk}
+
+Goal: The generated cover letter should reflect the user's personal voice and style (formal or informal), align their experience with the job description, and address any key areas that are essential for the role. Make sure the letter is concise, clear, and tailored specifically to the job.
+`;
   }
 
   buildJobJson(job: Job): JobJson {
@@ -42,7 +47,7 @@ export class UtilsService {
           {
             role: 'system',
             content:
-              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
+              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate. We want to make sure the text is not AI detectable',
           },
           { role: 'user', content: this.createJobContentMessage(job) },
         ],
@@ -98,7 +103,7 @@ export class UtilsService {
         messages: [
           {
             role: 'system',
-            content: `You are an experienced career advisor and writing assistant. Your role is to help users craft personalized cover letters that closely reflect their unique writing style, based on an example base cover letter they provide. You will analyze the job description, the candidate's CV, and their unfiltered pitch to generate a cover letter that is professional yet personalized to the user. Your goal is to ensure the cover letter is as close as possible to the user’s natural writing, incorporating their voice, avoiding overly formal or AI-generated phrasing, and presenting them as a genuine, qualified candidate. Balance professionalism with authenticity, while addressing the specific requirements of the job description.`,
+            content: `You are an experienced career advisor and writing assistant. Your role is to help users craft personalized cover letters that reflect their unique writing style, based on an example base cover letter they provide. The goal is to ensure the generated letter mimics the user’s natural writing tone—often a mix of casual conversation and technical language—avoiding overly formal or robotic phrasing that might trigger AI detection. The cover letter should address the specific requirements of the job, link relevant skills, and sound as if it were written personally by the user. Keep it concise, and neutral tone. Avoid overly enthusiastic or playful language liked excited, thrilled, stuff like that. Lean to neutral but follow the user tone.`,
           },
           {
             role: 'user',
@@ -113,18 +118,43 @@ export class UtilsService {
             schema: {
               type: 'object',
               properties: {
+                example_user_conversation: {
+                  type: 'string',
+                  description: `Take note of how the user writes here. The writing style here should be incorpated so that AI detection is not possible. Here's the cover letter pitch: ${coverLetter.userPitch}. Here's the users submitted sample text: ${coverLetter.job.jobType[0].user.userTalk}}`,
+                },
+                writing_analysis: {
+                  type: 'string',
+                  description:
+                    'Analyze how the base cover letter, CV, and user pitch are written. Ensure the generated cover letter mimics the user’s conversational style, technical references, and tone shifts. The user often speaks with a mix of informal phrasing and technical exploration (e.g., speculative language like "I’m guessing" or "maybe"). Minor grammar fixes are allowed, but the user’s voice must remain authentic. Avoid formal AI-sounding language.',
+                },
+                skills_mentioned_in_job: {
+                  type: 'string',
+                  description:
+                    'Identify all the skills, qualities, and descriptions in the job posting. If these skills or qualities are mentioned in the CV, base cover letter, or user pitch, they must be included in the final cover letter.',
+                },
+                job_requirements_matching: {
+                  type: 'string',
+                  description:
+                    'Ensure the generated cover letter explicitly links the user’s skills and experiences to the specific requirements in the job description. If the job mentions certain qualifications (e.g., APIs, AWS, GitHub), make sure the user’s relevant experience is clearly and directly tied to these.',
+                },
                 cover_letter: {
                   type: 'string',
                   description:
-                    'The full contents of the generated cover letter',
+                    "Generate the complete cover letter by combining the writing analysis (to match the user’s writing style), the skills mentioned in the job (to match the job description), and the job requirements matching (to ensure specific job qualifications are linked to the user’s experiences). Ensure it reads as a cohesive and professional cover letter. Use commas for breaks in thought or emphasis, ensuring natural and smooth sentence flow. The example_user_conversation allows you to know how the user writes normally to GPT as responses. We want to make sure this cover letter is not AI-detectable. Keep it concise and in a neutral tone. Avoid overly enthusiastic or playful language like 'excited,' 'thrilled,' and similar terms. Lean toward neutral but follow the user's tone.",
                 },
               },
-              required: ['cover_letter'], // Cover letter is mandatory
+              required: [
+                'example_user_conversation',
+                'writing_analysis',
+                'skills_mentioned_in_job',
+                'job_requirements_matching',
+                'cover_letter',
+              ], // All properties are required
               additionalProperties: false, // Do not allow any extra fields
             },
           },
         },
-        max_tokens: 1000, // Adjust token count as needed for the expected letter length
+        max_tokens: 1600, // Adjust token count as needed for the expected letter length
       },
     };
   }
@@ -161,7 +191,7 @@ export class UtilsService {
     return Buffer.from(jsonLDFormatted, 'utf-8');
   }
 
-  async openAISendJSON(prefix: string) {
+  async openAISendJSON(prefix: string): Promise<OpenAI.Batches.Batch> {
     const openai = new OpenAI({
       apiKey: this.configService.get('secrets.openApiKey'),
     });
@@ -190,5 +220,39 @@ export class UtilsService {
     });
 
     return batch;
+  }
+
+  async checkStatus(): Promise<boolean> {
+    const rabbitMqUrl = `http://localhost:15672`;
+    const username = this.configService.get<string>(
+      'secrets.rabbitmq.username',
+    );
+    const password = this.configService.get<string>(
+      'secrets.rabbitmq.password',
+    );
+    console.log(username);
+    const url = `${rabbitMqUrl}/api/queues/%2F/jobs_queue`;
+
+    try {
+      const response = await axios.get(url, {
+        auth: {
+          username,
+          password,
+        },
+      });
+
+      const queueInfo = response.data;
+      console.log(queueInfo.messages);
+      if (queueInfo.messages === 0) {
+        console.log('No more messages');
+      } else {
+        console.log('Still a message being processed');
+      }
+
+      return queueInfo.messages === 0; /// this will be true
+    } catch (error) {
+      console.error('Failed to query RabbitMQ API', error);
+      return false; // Handle the error appropriately
+    }
   }
 }

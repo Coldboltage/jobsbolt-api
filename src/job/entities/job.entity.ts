@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { JobType } from '../../job-type/entities/job-type.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
@@ -58,6 +58,7 @@ export class Job {
   conciseSuited: string;
 
   @OneToOne(() => CoverLetter, (coverLetter) => coverLetter.job)
+  @JoinColumn()
   coverLetter: CoverLetter;
 
   // Management
@@ -134,15 +135,15 @@ export interface IndividualJobFromBatchChoice {
 export interface ChatCompletionMessage {
   role: string;
   /**
-   * A JSON string that can be parsed into a ParsedContent object.
+   * A JSON string that can be parsed into a ParsedJobContent object.
    */
   content: string;
 }
 
-export interface IndividualJobFromBatchResponseBody {
-  analysis: string;
-  is_suitable: boolean;
-}
+// export interface IndividualJobFromBatchResponseBody {
+//   analysis: string;
+//   is_suitable: boolean;
+// }
 
 export interface CompleteJobParse {
   indeedId: string;
@@ -152,7 +153,7 @@ export interface CompleteJobParse {
   conciseSuited: string;
 }
 
-export interface ParsedContent {
+export interface ParsedJobContent {
   analysis: string;
   is_suitable: boolean;
   conciseDescription: string;

@@ -28,8 +28,11 @@ export class User {
   @Column({ nullable: true })
   description: string; // User talks about themself and what they think of themselves and their CV, what they aim to do
 
-  @Column()
+  @Column({ nullable: true })
   baseCoverLetter: string;
+
+  @Column({ nullable: true })
+  userTalk: string;
 
   @Column({ type: 'simple-array', nullable: true })
   roles: Role[];

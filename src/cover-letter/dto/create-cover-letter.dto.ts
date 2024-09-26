@@ -2,7 +2,7 @@ import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 export class CreateCoverLetterDto {
   @IsUUID()
-  indeedId: string;
+  jobId: string;
 
   @IsString()
   @IsNotEmpty()

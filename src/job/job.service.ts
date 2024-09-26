@@ -6,19 +6,16 @@ import {
   IndividualJobFromBatch,
   Job,
   JobInfoInterface,
-  JobJson,
-  ParsedContent,
+  ParsedJobContent,
 } from './entities/job.entity';
 import { JobTypeService } from '../job-type/job-type.service';
-import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
 import { BatchService } from '../batch/batch.service';
 import { Cron } from '@nestjs/schedule';
 import { BatchStatusEnum, BatchType } from '../batch/entity/batch.entity';
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
-import { Jobs } from 'openai/resources/fine-tuning/jobs/jobs';
-import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
+
 import { UtilsService } from '../utils/utils.service';
 const path = require('path');
 const fs = require('fs');
@@ -58,12 +55,13 @@ export class JobService implements OnApplicationBootstrap {
     }
     const updatedNewJobs = await this.jobRepository.save(newJobs);
 
-    const response = await this.utilService.buildJsonLd(updatedNewJobs, 'job');
+    await this.utilService.buildJsonLd(updatedNewJobs, 'job');
 
-    if (response === null) {
-      console.log('no jobs available for buildJsonLd');
-      return;
-    }
+    // if (response === null) {
+    //   console.log('no jobs available for buildJsonLd');
+    //   return;
+    // }
+
     const batch = await this.utilService.openAISendJSON('job');
     await this.batchService.create({
       id: batch.id,
@@ -74,9 +72,11 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   @Cron('*/10 * * * * *')
-  async checkBatches() {
+  async checkJobBatches() {
     // Get all the successfully completed batches
-    const allResponses = await this.batchService.checkPendingBatchJobs();
+    const allResponses = await this.batchService.checkPendingBatches(
+      BatchType.JOB,
+    );
     if (!allResponses) return;
     for (const job of allResponses) {
       const completeJob = this.processJobObject(job);
@@ -87,7 +87,7 @@ export class JobService implements OnApplicationBootstrap {
 
   processJobObject(job: IndividualJobFromBatch): CompleteJobParse {
     const indeedId = job.custom_id;
-    const content: ParsedContent = JSON.parse(
+    const content: ParsedJobContent = JSON.parse(
       job.response.body.choices[0].message.content,
     );
     const summary = content.analysis;
@@ -378,13 +378,14 @@ export class JobService implements OnApplicationBootstrap {
     return this.jobRepository.find({});
   }
 
-  async findOne(indeedId) {
+  async findOne(jobId: string) {
     return this.jobRepository.findOne({
       relations: {
         jobType: true,
+        coverLetter: true,
       },
       where: {
-        id: indeedId,
+        id: jobId,
       },
     });
   }

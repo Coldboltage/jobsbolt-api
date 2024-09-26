@@ -20,6 +20,11 @@ export class CoverLetterController {
     return this.coverLetterService.create(createCoverLetterDto);
   }
 
+  @Post('create-batch-job')
+  createBatchCover() {
+    return this.coverLetterService.createBatchCover()
+  }
+
   @Get()
   findAll() {
     return this.coverLetterService.findAll();

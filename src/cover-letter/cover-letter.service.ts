@@ -2,12 +2,18 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateCoverLetterDto } from './dto/create-cover-letter.dto';
 import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CoverLetter } from './entities/cover-letter.entity';
+import {
+  CompleteCoverParse,
+  CoverLetter,
+  ParsedJobContent,
+} from './entities/cover-letter.entity';
 import { IsNull, Not, Repository } from 'typeorm';
 import { JobService } from '../job/job.service';
 import { UtilsService } from '../utils/utils.service';
 import { BatchStatusEnum, BatchType } from '../batch/entity/batch.entity';
 import { BatchService } from '../batch/batch.service';
+import { Cron } from '@nestjs/schedule';
+import { IndividualJobFromBatch } from '../job/entities/job.entity';
 
 @Injectable()
 export class CoverLetterService {
@@ -18,10 +24,37 @@ export class CoverLetterService {
     private utilService: UtilsService,
     private batchService: BatchService,
   ) { }
-  async create(createCoverLetterDto: CreateCoverLetterDto) {
-    const jobEntity = await this.jobService.findOne(
-      createCoverLetterDto.indeedId,
+
+  @Cron('*/10 * * * * *')
+  async checkCoverBatches() {
+    // Get all the successfully completed batches
+    const allResponses = await this.batchService.checkPendingBatches(
+      BatchType.COVER,
     );
+    if (!allResponses) return;
+    for (const cover of allResponses) {
+      const completeJob = this.processCoverObject(cover);
+      await this.updateFromCompleteCoverParse(completeJob);
+    }
+  }
+
+  processCoverObject(cover: IndividualJobFromBatch): CompleteCoverParse {
+    const coverId = cover.custom_id;
+    const content: ParsedJobContent = JSON.parse(
+      cover.response.body.choices[0].message.content,
+    );
+    const coverLetter = content.cover_letter;
+
+    const object: CompleteCoverParse = {
+      coverId,
+      cover_letter: coverLetter,
+    };
+
+    return object;
+  }
+
+  async create(createCoverLetterDto: CreateCoverLetterDto) {
+    const jobEntity = await this.jobService.findOne(createCoverLetterDto.jobId);
 
     if (jobEntity.coverLetter !== null)
       throw new ConflictException('cover_letter_already_exists');
@@ -32,28 +65,25 @@ export class CoverLetterService {
     });
   }
 
-  async createBatchCoverLetter() {
-    const newCoverLetters = await this.coverLetterRepository.find({
-      relations: {
-        job: {
-          jobType: {
-            user: true,
-          },
-        },
-      },
-      where: {
-        generatedCoverLetter: IsNull(),
-        userPitch: Not(IsNull()),
-      },
-    });
+  async createBatchCover() {
+    const newCovers = await this.findCoverLettersToGenerate();
+
+    // update scans for jobs
+    newCovers.forEach((cover) => (cover.batch = true));
+
+    if (!newCovers || newCovers.length === 0) {
+      console.log('no qualifying covers');
+      return null;
+    }
+    const updatedNewCovers = await this.coverLetterRepository.save(newCovers);
 
     const response = await this.utilService.buildJsonLd(
-      newCoverLetters,
+      updatedNewCovers,
       'cover',
     );
 
     if (response === null) {
-      console.log('no jobs available for buildJsonLd');
+      console.log('no covers available for buildJsonLd');
       return;
     }
     const batch = await this.utilService.openAISendJSON('cover');
@@ -65,7 +95,25 @@ export class CoverLetterService {
     });
   }
 
-  // Create BatchJSON Data
+  async findCoverLettersToGenerate() {
+    return this.coverLetterRepository.find({
+      relations: {
+        job: {
+          jobType: {
+            user: true,
+          },
+        },
+      },
+      where: {
+        generatedCoverLetter: IsNull(),
+        userPitch: Not(IsNull()),
+        batch: false,
+        job: {
+          suited: true,
+        },
+      },
+    });
+  }
 
   findAll() {
     return `This action returns all coverLetter`;
@@ -77,6 +125,13 @@ export class CoverLetterService {
 
   update(id: number, updateCoverLetterDto: UpdateCoverLetterDto) {
     return `This action updates a #${id} coverLetter`;
+  }
+
+  async updateFromCompleteCoverParse(completeJob: CompleteCoverParse) {
+    return this.coverLetterRepository.update(
+      { id: completeJob.coverId },
+      { generatedCoverLetter: completeJob.cover_letter },
+    );
   }
 
   remove(id: number) {
