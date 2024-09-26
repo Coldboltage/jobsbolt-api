@@ -32,7 +32,7 @@ jobs:
 
       # Step 4: Run tests
       - name: Run Job Service
-        run: npm run test job.service
+        run: npm run test job
 
       - name: Run Job Controller
-        run: npm run test job.controller
+        run: npm run test utilis.service
