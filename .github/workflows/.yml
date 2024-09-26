@@ -31,8 +31,5 @@ jobs:
         run: npm install
 
       # Step 4: Run tests
-      - name: Run Job Service
-        run: npm run test job
-
-      - name: Run Job Controller
-        run: npm run test utilis.service
+      - name: Run Tests
+        run: npm run test
