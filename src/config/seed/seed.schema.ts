@@ -6,8 +6,6 @@ const seederEnvSchema = z.object({
   SEEDER_PASSWORD: z.string(),
 });
 
-export type SeedConfig = z.infer<typeof seederEnvSchema>;
-
 export const validateSeederEnv = (config: Record<string, unknown>) => {
   const seederValidatedEnv = seederEnvSchema.safeParse(config);
   if (!seederValidatedEnv.success) {
