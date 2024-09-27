@@ -21,6 +21,7 @@ import { validateSecretEnv } from './config/secret/secret.schema';
 import { validateRabbitmqEnv } from './config/rabbitmq/rabbitmq.schema';
 import { CoverLetterModule } from './cover-letter/cover-letter.module';
 import { UtilsModule } from './utils/utils.module';
+import { SeederModule } from './seeder/seeder.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { UtilsModule } from './utils/utils.module';
     DiscordModule,
     CoverLetterModule,
     UtilsModule,
+    SeederModule,
   ],
   controllers: [AppController],
   providers: [AppService],
