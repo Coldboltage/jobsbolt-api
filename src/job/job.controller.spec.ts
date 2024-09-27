@@ -230,4 +230,43 @@ describe('JobController', () => {
       expect(guards).toContain(RolesGuard);
     });
   });
+
+  describe('findAllCoverLetterToApply', () => {
+    it('should fire the service findAllCoverLetterToApply', async () => {
+      // Arrange
+      const reqMock = {
+        user: {
+          id: faker.string.uuid(),
+        },
+      };
+      const findAllCoverLetterToApplySpy = jest.spyOn(
+        service,
+        'findAllCoverLetterToApply',
+      );
+      // Act
+      await controller.findAllCoverLetterToApply(reqMock);
+      // Assert
+      expect(findAllCoverLetterToApplySpy).toHaveBeenCalled();
+    });
+
+    it('should throw an exception if no cover letter is generated for any job', async () => {
+      // Arrange
+      const reqMock = {
+        user: {
+          id: faker.string.uuid(),
+        },
+      };
+
+      const findAllCoverLetterToApplySpy = jest
+        .spyOn(service, 'findAllCoverLetterToApply')
+        .mockRejectedValueOnce(new Error('no_cover_letters_ready'));
+
+      // Act
+      const result = controller.findAllCoverLetterToApply(reqMock);
+
+      // Assert
+      await expect(result).rejects.toThrow('no_cover_letters_ready');
+      expect(findAllCoverLetterToApplySpy).toHaveBeenCalled();
+    });
+  });
 });

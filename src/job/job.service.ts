@@ -1,6 +1,10 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { DeepPartial, In, IsNull, Not, Repository } from 'typeorm';
 import {
   CompleteJobParse,
   IndividualJobFromBatch,
@@ -17,6 +21,7 @@ import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
 
 import { UtilsService } from '../utils/utils.service';
+import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
 const path = require('path');
 const fs = require('fs');
 
@@ -192,179 +197,6 @@ export class JobService implements OnApplicationBootstrap {
     return jobs;
   }
 
-  // async buildJsonLd(records: Job[] | CoverLetter[]): Promise<Buffer> {
-  //   // House the JSON
-  //   const jsonArray = [];
-  //   // Loop through
-  //   for (const record of records) {
-  //     let jsonRecord;
-  //     if (record instanceof Job) {
-  //       jsonRecord = this.buildJobJson(record);
-  //     } else {
-  //       jsonRecord = this.buildCoverletterJson(record)
-  //     }
-  //     jsonArray.push(jsonRecord);
-  //   }
-  //   // Convert into JSONLD
-  //   const jsonLDFormatted = jsonArray
-  //     .map((job) => {
-  //       console.log(job);
-  //       return JSON.stringify(job);
-  //     })
-  //     .join('\n');
-  //   // Create File
-  //   // Write the JSON Lines to a file
-  //   fs.writeFileSync(path.join(__dirname, 'requests.jsonl'), jsonLDFormatted);
-  //   return Buffer.from(jsonLDFormatted, 'utf-8');
-  // }
-
-  // async openAISendJSON() {
-  //   const openai = new OpenAI({
-  //     apiKey: this.configService.get('secrets.openApiKey'),
-  //   });
-
-  //   const filePath = path.join(__dirname, 'requests.jsonl');
-
-  //   if (fs.existsSync(filePath)) {
-  //     console.log(`File found: ${filePath}`);
-  //   } else {
-  //     console.log(`File not found: ${filePath}`);
-  //   }
-
-  //   const response = await openai.files.create({
-  //     file: fs.createReadStream(path.join(__dirname, 'requests.jsonl')),
-  //     purpose: 'batch',
-  //   });
-
-  //   console.log(response);
-
-  //   const batch = await openai.batches.create({
-  //     input_file_id: response.id,
-  //     endpoint: '/v1/chat/completions',
-  //     completion_window: '24h',
-  //   });
-
-  //   return batch;
-  // }
-
-  // createContentMessage(job: Job) {
-  //   return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType[0].user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType[0].user.description}. The CV helps but the description gives a more recent telling of what the user is thinking.`;
-  // }
-
-  // buildJobJson(job: Job): JobJson {
-  //   return {
-  //     custom_id: job.indeedId,
-  //     method: 'POST',
-  //     url: '/v1/chat/completions',
-  //     body: {
-  //       model: 'gpt-4o-2024-08-06',
-  //       messages: [
-  //         {
-  //           role: 'system',
-  //           content:
-  //             'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
-  //         },
-  //         { role: 'user', content: this.createContentMessage(job) },
-  //       ],
-  //       response_format: {
-  //         type: 'json_schema',
-  //         json_schema: {
-  //           name: 'job_analysis_schema', // Name the schema appropriately
-  //           strict: true,
-  //           schema: {
-  //             type: 'object',
-  //             properties: {
-  //               analysis: {
-  //                 type: 'string',
-  //                 description:
-  //                   'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
-  //               },
-  //               is_suitable: {
-  //                 type: 'boolean',
-  //                 description:
-  //                   'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
-  //               },
-  //               conciseDescription: {
-  //                 type: 'string',
-  //                 description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
-  //               },
-  //               conciseSuited: {
-  //                 type: 'string',
-  //                 description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
-  //               },
-  //             },
-  //             required: [
-  //               'analysis',
-  //               'is_suitable',
-  //               'conciseDescription',
-  //               'conciseSuited',
-  //             ],
-  //             additionalProperties: false, // Prevent additional properties
-  //           },
-  //         },
-  //       },
-  //       max_tokens: 1000,
-  //     },
-  //   };
-  // }
-
-  // buildCoverLetterJson(coverLetter: CoverLetter) {
-  //   return {
-  //     custom_id: coverLetter.id,
-  //     method: 'POST',
-  //     url: '/v1/chat/completions',
-  //     body: {
-  //       model: 'gpt-4o-2024-08-06',
-  //       messages: [
-  //         {
-  //           role: 'system',
-  //           content:
-  //             'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
-  //         },
-  //         { role: 'user', content: this.createContentMessage(job) },
-  //       ],
-  //       response_format: {
-  //         type: 'json_schema',
-  //         json_schema: {
-  //           name: 'job_analysis_schema', // Name the schema appropriately
-  //           strict: true,
-  //           schema: {
-  //             type: 'object',
-  //             properties: {
-  //               analysis: {
-  //                 type: 'string',
-  //                 description:
-  //                   'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
-  //               },
-  //               is_suitable: {
-  //                 type: 'boolean',
-  //                 description:
-  //                   'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
-  //               },
-  //               conciseDescription: {
-  //                 type: 'string',
-  //                 description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
-  //               },
-  //               conciseSuited: {
-  //                 type: 'string',
-  //                 description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
-  //               },
-  //             },
-  //             required: [
-  //               'analysis',
-  //               'is_suitable',
-  //               'conciseDescription',
-  //               'conciseSuited',
-  //             ],
-  //             additionalProperties: false, // Prevent additional properties
-  //           },
-  //         },
-  //       },
-  //       max_tokens: 1000,
-  //     },
-  //   };
-  // }
-
   async sendDiscordNewJobMessage() {
     const users = await this.userService.findAllUserUnsendJobs();
     console.log(users);
@@ -446,6 +278,48 @@ export class JobService implements OnApplicationBootstrap {
         },
       },
     });
+  }
+
+  async findAllCoverLetterToApply(userId: string): Promise<DeepPartial<Job[]>> {
+    const jobsToApplyEntity = await this.jobRepository.find({
+      where: {
+        applied: false,
+        suited: true,
+        coverLetter: {
+          batch: true,
+          generatedCoverLetter: Not(IsNull()),
+        },
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+      },
+      relations: {
+        coverLetter: true,
+        jobType: {
+          user: true,
+        },
+      },
+      select: {
+        link: true,
+        applied: true,
+        coverLetter: {
+          generatedCoverLetter: true,
+          userPitch: true,
+        },
+        jobType: false,
+      },
+    });
+    if (!jobsToApplyEntity)
+      throw new NotFoundException('no_cover_letters_ready');
+
+    const result = jobsToApplyEntity.map((job) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { jobType, ...rest } = job;
+      return rest;
+    });
+    return result;
   }
 
   async sendUserNewJobs(userId: string) {
