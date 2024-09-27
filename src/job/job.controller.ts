@@ -5,14 +5,12 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   Req,
   ParseBoolPipe,
 } from '@nestjs/common';
 import { JobService } from './job.service';
 import { CreateJobDto } from './dto/create-job.dto';
-import { UpdateJobDto } from './dto/update-job.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '../auth/role.enum';
@@ -54,8 +52,8 @@ export class JobController {
   }
 
   @Get(':id')
-  findOne(@Param('id') jobId: string) {
-    return this.jobService.findOne(jobId)
+  findOne(@Param('id') indeedId: string) {
+    return this.jobService.findOne(indeedId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -172,7 +170,7 @@ export class JobController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @Patch('application-state/:jobId/:state')
+  @Patch('application-state/:indeedId/:state')
   @ApiBearerAuth()
   @ApiOperation({
     summary:
@@ -191,8 +189,12 @@ export class JobController {
   updateJobApplication(
     @Req() req,
     @Param('state', ParseBoolPipe) state: boolean,
-    @Param('jobId') jobId: string,
+    @Param('indeedId') indeedId: string,
   ) {
-    return this.jobService.updateJobApplication(req.user.userId, jobId, state);
+    return this.jobService.updateJobApplication(
+      req.user.userId,
+      indeedId,
+      state,
+    );
   }
 }

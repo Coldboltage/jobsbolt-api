@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Batch, BatchStatusEnum } from './entity/batch.entity';
+import { Batch, BatchStatusEnum, BatchType } from './entity/batch.entity';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
@@ -20,36 +20,38 @@ export class BatchService {
     return this.batchRepository.save(createBatchDto);
   }
 
-  async getPendingBatchJobs(): Promise<Batch[]> {
+  async getPendingBatchJobs(type: BatchType): Promise<Batch[]> {
     return this.batchRepository.find({
       where: [
-        { status: BatchStatusEnum.VALIDATING },
-        { status: BatchStatusEnum.IN_PROGRESS },
-        { status: BatchStatusEnum.FINALIZING },
+        { status: BatchStatusEnum.VALIDATING, type },
+        { status: BatchStatusEnum.IN_PROGRESS, type },
+        { status: BatchStatusEnum.FINALIZING, type },
       ],
     });
   }
 
   // We've got all the batch jobs, now check if they are available
-  async checkPendingBatchJobs(): Promise<IndividualJobFromBatch[]> {
-    const pendingBatchJobs = await this.getPendingBatchJobs();
+  async checkPendingBatches(
+    type: BatchType,
+  ): Promise<IndividualJobFromBatch[]> {
+    const pendingBatchJobs = await this.getPendingBatchJobs(type);
     for (const batch of pendingBatchJobs) {
-      console.log('Checking for jobs');
-      console.log(batch)
+      console.log('Batch Info');
+      console.log(batch);
       const batchStatus = await this.openai.batches.retrieve(batch.id);
-      console.log(batchStatus)
+      console.log(batchStatus);
       // IF completed
-      const finishedBatchJobs: IndividualJobFromBatch[] = [];
+      const finishedBatches: IndividualJobFromBatch[] = [];
       if (batchStatus.status === BatchStatusEnum.COMPLETED) {
         // Update batch entity
         await this.completed(batch.id);
         // Get the file
         const finishedBatch = await this.grabCompletedBatchFile(batchStatus);
-        finishedBatchJobs.push(...finishedBatch);
+        finishedBatches.push(...finishedBatch);
       }
       // Rest of jobs are still going on
-      console.log(finishedBatchJobs);
-      return finishedBatchJobs;
+      console.log(finishedBatches);
+      return finishedBatches;
     }
   }
 
@@ -74,7 +76,7 @@ export class BatchService {
       .filter(Boolean);
 
     // The batch file JSON is now an array of JSON completed jobs.
-    console.log('grabCompletedBatchFile complete')
+    console.log('grabCompletedBatchFile complete');
     return jsonArray;
   }
 

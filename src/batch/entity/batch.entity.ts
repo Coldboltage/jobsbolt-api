@@ -10,6 +10,9 @@ export class Batch {
 
   @Column()
   filename: string;
+
+  @Column()
+  type: BatchType;
 }
 
 export enum BatchStatusEnum {
@@ -19,4 +22,9 @@ export enum BatchStatusEnum {
   FINALIZING = 'finalizing',
   COMPLETED = 'completed',
   EXPIRED = 'expired',
+}
+
+export enum BatchType {
+  COVER = 'COVER',
+  JOB = 'JOB',
 }

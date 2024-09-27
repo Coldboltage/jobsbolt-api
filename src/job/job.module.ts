@@ -7,6 +7,7 @@ import { JobTypeModule } from '../job-type/job-type.module';
 import { BatchModule } from '../batch/batch.module';
 import { DiscordModule } from '../discord/discord.module';
 import { AuthModule } from '../auth/auth.module';
+import { UtilsModule } from '../utils/utils.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from '../auth/auth.module';
     JobTypeModule,
     BatchModule,
     DiscordModule,
+    UtilsModule,
   ],
   controllers: [JobController],
   providers: [JobService],

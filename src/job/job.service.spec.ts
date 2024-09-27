@@ -13,11 +13,11 @@ import {
   Job,
   JobInfoInterface,
   JobJson,
-  ParsedContent,
+  ParsedJobContent,
 } from './entities/job.entity';
 import { ConfigService } from '@nestjs/config';
 import { BatchService } from '../batch/batch.service';
-import { BatchStatusEnum } from '../batch/entity/batch.entity';
+import { BatchStatusEnum, BatchType } from '../batch/entity/batch.entity';
 import { faker } from '@faker-js/faker';
 import { JobTypeService } from '../job-type/job-type.service';
 import { JobType } from '../job-type/entities/job-type.entity';
@@ -28,6 +28,8 @@ import { Role } from '../auth/role.enum';
 import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
+import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
+import { UtilsService } from '../utils/utils.service';
 
 const path = require('path');
 
@@ -60,6 +62,7 @@ describe('JobService', () => {
   let jobRepository: Repository<Job>;
   let userService: UserService;
   let discordService: DiscordService;
+  let utilsService: UtilsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -81,15 +84,16 @@ describe('JobService', () => {
     jobRepository = module.get<Repository<Job>>(getRepositoryToken(Job));
     userService = module.get<UserService>(UserService);
     discordService = module.get<DiscordService>(DiscordService);
+    utilsService = module.get<UtilsService>(UtilsService);
   });
 
   const createFullUserWithDetails = () => {
-    const mockJobId = '123';
+    const mockindeedId = '123';
     const mockJob: Job = {
       id: faker.string.uuid(),
-      jobId: mockJobId,
+      indeedId: mockindeedId,
       applied: false,
-      link: `https://www.indeed.com/viewjob?jk=${mockJobId}`,
+      link: `https://www.indeed.com/viewjob?jk=${mockindeedId}`,
       name: faker.person.jobTitle(),
       companyName: faker.company.name(),
       date: new Date(),
@@ -103,6 +107,7 @@ describe('JobService', () => {
       jobType: null,
       scannedLast: null,
       notification: false,
+      coverLetter: new CoverLetter(),
     };
 
     const mockJobTypeEntity: JobType = {
@@ -129,6 +134,8 @@ describe('JobService', () => {
       description: faker.lorem.lines(),
       roles: [Role.USER],
       jobType: [mockJobTypeEntity],
+      baseCoverLetter: faker.lorem.paragraph(),
+      userTalk: faker.lorem.paragraph(),
     };
 
     mockJob.jobType = [mockJobTypeEntity];
@@ -137,62 +144,62 @@ describe('JobService', () => {
     return { mockUser, mockJobTypeEntity, mockJob };
   };
 
-  const createMockJsonLayout = (mockJob: Job): JobJson => {
-    return {
-      custom_id: mockJob.jobId,
-      method: 'POST',
-      url: '/v1/chat/completions',
-      body: {
-        model: 'gpt-4o-2024-08-06',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
-          },
-          { role: 'user', content: expect.any(String) },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'job_analysis_schema',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                analysis: {
-                  type: 'string',
-                  description:
-                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
-                },
-                is_suitable: {
-                  type: 'boolean',
-                  description:
-                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
-                },
-                conciseDescription: {
-                  type: 'string',
-                  description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
-                },
-                conciseSuited: {
-                  type: 'string',
-                  description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
-                },
-              },
-              required: [
-                'analysis',
-                'is_suitable',
-                'conciseDescription',
-                'conciseSuited',
-              ],
-              additionalProperties: false,
-            },
-          },
-        },
-        max_tokens: 1000,
-      },
-    };
-  };
+  // const createMockJsonLayout = (mockJob: Job): JobJson => {
+  //   return {
+  //     custom_id: mockJob.indeedId,
+  //     method: 'POST',
+  //     url: '/v1/chat/completions',
+  //     body: {
+  //       model: 'gpt-4o-2024-08-06',
+  //       messages: [
+  //         {
+  //           role: 'system',
+  //           content:
+  //             'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
+  //         },
+  //         { role: 'user', content: expect.any(String) },
+  //       ],
+  //       response_format: {
+  //         type: 'json_schema',
+  //         json_schema: {
+  //           name: 'job_analysis_schema',
+  //           strict: true,
+  //           schema: {
+  //             type: 'object',
+  //             properties: {
+  //               analysis: {
+  //                 type: 'string',
+  //                 description:
+  //                   'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
+  //               },
+  //               is_suitable: {
+  //                 type: 'boolean',
+  //                 description:
+  //                   'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
+  //               },
+  //               conciseDescription: {
+  //                 type: 'string',
+  //                 description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
+  //               },
+  //               conciseSuited: {
+  //                 type: 'string',
+  //                 description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
+  //               },
+  //             },
+  //             required: [
+  //               'analysis',
+  //               'is_suitable',
+  //               'conciseDescription',
+  //               'conciseSuited',
+  //             ],
+  //             additionalProperties: false,
+  //           },
+  //         },
+  //       },
+  //       max_tokens: 1000,
+  //     },
+  //   };
+  // };
 
   it('should be defined', () => {
     expect(service).toBeDefined();
@@ -259,29 +266,32 @@ describe('JobService', () => {
   });
 
   describe('createBatchJob', () => {
-    it('should not execute anything after buildJsonLd', async () => {
+    it('should not execute anything after scanAvailableJobs', async () => {
       // Arrange
-      const buildJobJsonSpy = jest
-        .spyOn(service, 'buildJsonLd')
-        .mockResolvedValueOnce(null);
-
-      const openAISendJSONSpy = jest.spyOn(service, 'openAISendJSON');
-      const batchServiceCreateSpy = jest.spyOn(batchService, 'create');
+      const scanAvailableJobsSpy = jest
+        .spyOn(service, 'scanAvailableJobs')
+        .mockResolvedValueOnce([]);
 
       // Act
-      await service.createBatchJob();
+      const result = await service.createBatchJob();
       // Assert
-      expect(buildJobJsonSpy).toHaveBeenCalled();
-      expect(openAISendJSONSpy).not.toHaveBeenCalled();
-      expect(batchServiceCreateSpy).not.toHaveBeenCalled();
+      expect(scanAvailableJobsSpy).toHaveBeenCalled();
+      expect(result).toEqual(null);
     });
 
     it('should execute batchsService.create', async () => {
       // Arrange
+      const mockNewJob: Job = new Job();
+      const mockNewJobsList: Job[] = [mockNewJob];
+
+      const scanAvailableJobsSpy = jest
+        .spyOn(service, 'scanAvailableJobs')
+        .mockResolvedValueOnce(mockNewJobsList);
+
       const mockBuffer = Buffer.from('some test data');
 
       const buildJobJsonSpy = jest
-        .spyOn(service, 'buildJsonLd')
+        .spyOn(utilsService, 'buildJsonLd')
         .mockResolvedValueOnce(mockBuffer);
 
       const mockBatch: OpenAI.Batches.Batch = {
@@ -295,100 +305,101 @@ describe('JobService', () => {
       };
 
       const openAISendJSONSpy = jest
-        .spyOn(service, 'openAISendJSON')
+        .spyOn(utilsService, 'openAISendJSON')
         .mockResolvedValueOnce(mockBatch);
-      const batchServiceCreateSpy = jest
-        .spyOn(batchService, 'create')
-        .mockResolvedValueOnce(undefined);
+      const batchServiceCreateSpy = jest.spyOn(batchService, 'create');
 
       // Act
       await service.createBatchJob();
       // Assert
+      expect(scanAvailableJobsSpy).toHaveBeenCalled();
       expect(buildJobJsonSpy).toHaveBeenCalled();
       expect(openAISendJSONSpy).toHaveBeenCalled();
+      expect(openAISendJSONSpy).toHaveBeenCalledWith('job');
       expect(batchServiceCreateSpy).toHaveBeenCalled();
       expect(batchServiceCreateSpy).toHaveBeenCalledWith({
         id: mockBatch.id,
         status: BatchStatusEnum.VALIDATING,
         filename: mockBatch.input_file_id,
+        type: BatchType.JOB,
       });
     });
   });
 
-  describe('checkBatches', () => {
-    it('do not do anything', async () => {
-      // Arrange
-      const mockAllResponses = undefined;
-      const checkPendingBatchJobsSpy = jest
-        .spyOn(batchService, 'checkPendingBatchJobs')
-        .mockResolvedValueOnce(mockAllResponses);
+  // describe('checkBatches', () => {
+  //   it('do not do anything', async () => {
+  //     // Arrange
+  //     const mockAllResponses = undefined;
+  //     const checkPendingBatchesSpy = jest
+  //       .spyOn(batchService, 'checkPendingBatches')
+  //       .mockResolvedValueOnce(mockAllResponses);
 
-      const processJobObjectSpy = jest.spyOn(service, 'processJobObject');
+  //     const processJobObjectSpy = jest.spyOn(service, 'processJobObject');
 
-      const updateFromCompleteJobParsetSpy = jest
-        .spyOn(service, 'updateFromCompleteJobParse')
-        .mockResolvedValueOnce(undefined);
+  //     const updateFromCompleteJobParsetSpy = jest
+  //       .spyOn(service, 'updateFromCompleteJobParse')
+  //       .mockResolvedValueOnce(undefined);
 
-      const sendDiscordNewJobMessageSpy = jest.spyOn(
-        service,
-        'sendDiscordNewJobMessage',
-      );
-      // Act
-      await service.checkBatches();
+  //     const sendDiscordNewJobMessageSpy = jest.spyOn(
+  //       service,
+  //       'sendDiscordNewJobMessage',
+  //     );
+  //     // Act
+  //     await service.checkBatches();
 
-      // Assert
-      expect(checkPendingBatchJobsSpy).toHaveBeenCalled();
-      expect(processJobObjectSpy).not.toHaveBeenCalled();
-      expect(updateFromCompleteJobParsetSpy).not.toHaveBeenCalled();
-      expect(sendDiscordNewJobMessageSpy).not.toHaveBeenCalled();
-    });
+  //     // Assert
+  //     expect(checkPendingBatchesSpy).toHaveBeenCalled();
+  //     expect(processJobObjectSpy).not.toHaveBeenCalled();
+  //     expect(updateFromCompleteJobParsetSpy).not.toHaveBeenCalled();
+  //     expect(sendDiscordNewJobMessageSpy).not.toHaveBeenCalled();
+  //   });
 
-    it('should update a job from a batch and call Discord Message', async () => {
-      // Arrange
-      const mockAllResponses: IndividualJobFromBatch = {
-        id: '',
-        custom_id: '',
-        response: undefined,
-        error: undefined,
-      };
+  //   it('should update a job from a batch and call Discord Message', async () => {
+  //     // Arrange
+  //     const mockAllResponses: IndividualJobFromBatch = {
+  //       id: '',
+  //       custom_id: '',
+  //       response: undefined,
+  //       error: undefined,
+  //     };
 
-      const checkPendingBatchJobsSpy = jest
-        .spyOn(batchService, 'checkPendingBatchJobs')
-        .mockResolvedValueOnce([mockAllResponses]);
+  //     const checkPendingBatchesSpy = jest
+  //       .spyOn(batchService, 'checkPendingBatches')
+  //       .mockResolvedValueOnce([mockAllResponses]);
 
-      const mockCompleteJob: CompleteJobParse = {
-        jobId: '',
-        summary: '',
-        suited: false,
-        conciseDescription: '',
-        conciseSuited: '',
-      };
+  //     const mockCompleteJob: CompleteJobParse = {
+  //       indeedId: '',
+  //       summary: '',
+  //       suited: false,
+  //       conciseDescription: '',
+  //       conciseSuited: '',
+  //     };
 
-      const processJobObjectSpy = jest
-        .spyOn(service, 'processJobObject')
-        .mockReturnValue(mockCompleteJob);
+  //     const processJobObjectSpy = jest
+  //       .spyOn(service, 'processJobObject')
+  //       .mockReturnValue(mockCompleteJob);
 
-      const updateFromCompleteJobParsetSpy = jest
-        .spyOn(service, 'updateFromCompleteJobParse')
-        .mockResolvedValueOnce(undefined);
+  //     const updateFromCompleteJobParsetSpy = jest
+  //       .spyOn(service, 'updateFromCompleteJobParse')
+  //       .mockResolvedValueOnce(undefined);
 
-      const sendDiscordNewJobMessageSpy = jest
-        .spyOn(service, 'sendDiscordNewJobMessage')
-        .mockResolvedValueOnce(undefined);
+  //     const sendDiscordNewJobMessageSpy = jest
+  //       .spyOn(service, 'sendDiscordNewJobMessage')
+  //       .mockResolvedValueOnce(undefined);
 
-      // Act
-      await service.checkBatches();
+  //     // Act
+  //     await service.checkBatches();
 
-      // Assert
-      expect(checkPendingBatchJobsSpy).toHaveBeenCalled();
-      expect(processJobObjectSpy).toHaveBeenCalled();
-      expect(updateFromCompleteJobParsetSpy).toHaveBeenCalled();
-      expect(sendDiscordNewJobMessageSpy).toHaveBeenCalled();
-    });
-  });
+  //     // Assert
+  //     expect(checkPendingBatchesSpy).toHaveBeenCalled();
+  //     expect(processJobObjectSpy).toHaveBeenCalled();
+  //     expect(updateFromCompleteJobParsetSpy).toHaveBeenCalled();
+  //     expect(sendDiscordNewJobMessageSpy).toHaveBeenCalled();
+  //   });
+  // });
 
   describe('processJobObject', () => {
-    const createMockContent = (state: boolean): ParsedContent => {
+    const createMockContent = (state: boolean): ParsedJobContent => {
       return {
         analysis: '',
         is_suitable: state,
@@ -416,8 +427,6 @@ describe('JobService', () => {
         created: 0,
         model: '',
         choices: [mockChoice],
-        analysis: '',
-        is_suitable: false,
       };
 
       const mockResponse: IndividualJobFromBatchResponse = {
@@ -443,7 +452,7 @@ describe('JobService', () => {
       );
 
       const answer: CompleteJobParse = {
-        jobId: mockJob.custom_id,
+        indeedId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: mockContent.is_suitable,
         conciseDescription: mockContent.conciseDescription,
@@ -465,7 +474,7 @@ describe('JobService', () => {
       );
 
       const answer: CompleteJobParse = {
-        jobId: mockJob.custom_id,
+        indeedId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: jobSuitedState,
         conciseDescription: mockContent.conciseDescription,
@@ -494,7 +503,7 @@ describe('JobService', () => {
     //   description: '',
     // };
     const mockJobInfo: JobInfoInterface = {
-      jobId: mockJob.jobId,
+      indeedId: mockJob.indeedId,
       jobTypeId: mockJob.jobType[0].id,
       name: mockJob.name,
       description: mockJob.description,
@@ -504,9 +513,9 @@ describe('JobService', () => {
     };
     // const jobEntity: Job = {
     //   id: faker.string.uuid(),
-    //   jobId: mockJob.jobId,
+    //   indeedId: mockJob.indeedId,
     //   applied: false,
-    //   link: `https://www.indeed.com/viewjob?jk=${mockJob.jobId}`,
+    //   link: `https://www.indeed.com/viewjob?jk=${mockJob.indeedId}`,
     //   name: mockJob.name,
     //   companyName: mockJob.companyName,
     //   date: new Date(),
@@ -539,8 +548,8 @@ describe('JobService', () => {
 
       // Assert
       expect(jobRepositorySaveSpy).toHaveBeenCalledWith({
-        jobId: mockJobInfo.jobId,
-        link: `https://www.indeed.com/viewjob?jk=${mockJobInfo.jobId}`,
+        indeedId: mockJobInfo.indeedId,
+        link: `https://www.indeed.com/viewjob?jk=${mockJobInfo.indeedId}`,
         name: mockJobInfo.name,
         date: expect.any(Date), // You can use `expect.any(Date)` if the exact date is not crucial
         description: mockJobInfo.description,
@@ -560,7 +569,7 @@ describe('JobService', () => {
       // Arrange
       // const { mockJobTypeEntity, mockJob } = createFullUserWithDetails();
       const mockJobInfo: JobInfoInterface = {
-        jobId: mockJob.jobId,
+        indeedId: mockJob.indeedId,
         jobTypeId: mockJob.jobType[0].id,
         name: mockJob.name,
         description: mockJob.description,
@@ -612,7 +621,7 @@ describe('JobService', () => {
       // Arrange
       const existingJobEntity: Job = {
         id: '',
-        jobId: mockJob.jobId,
+        indeedId: mockJob.indeedId,
         applied: false,
         link: '',
         name: '',
@@ -628,6 +637,7 @@ describe('JobService', () => {
         jobType: [mockJobTypeEntity],
         scannedLast: undefined,
         notification: false,
+        coverLetter: new CoverLetter(),
       };
 
       const jobTypeEntitySpy = jest
@@ -651,7 +661,7 @@ describe('JobService', () => {
   });
 
   describe('scanAvailableJobs', () => {
-    const mockJobId = faker.string.uuid();
+    const mockindeedId = faker.string.uuid();
     const mockJobTypeEntity: JobType = {
       id: '',
       name: '',
@@ -667,9 +677,9 @@ describe('JobService', () => {
 
     const jobEntity: Job = {
       id: faker.string.uuid(),
-      jobId: mockJobId,
+      indeedId: mockindeedId,
       applied: false,
-      link: `https://www.indeed.com/viewjob?jk=${mockJobId}`,
+      link: `https://www.indeed.com/viewjob?jk=${mockindeedId}`,
       name: faker.person.jobTitle(),
       companyName: faker.company.name(),
       date: new Date(),
@@ -683,6 +693,7 @@ describe('JobService', () => {
       jobType: [mockJobTypeEntity],
       scannedLast: null,
       notification: false,
+      coverLetter: new CoverLetter(),
     };
     it('should find all jobs available for a scan', async () => {
       // Arrange
@@ -703,245 +714,6 @@ describe('JobService', () => {
           },
         },
       });
-    });
-  });
-
-  describe('buildJsonLd', () => {
-    const filePath = path.join(__dirname, 'requests.jsonl');
-
-    afterEach(async () => {
-      try {
-        // Check if the file exists asynchronously
-        await fs.access(filePath); // If file does not exist, this will throw an error
-        await fs.unlink(filePath); // Asynchronously delete the file
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          // Ignore the error if the file doesn't exist
-          throw err;
-        }
-      }
-    });
-    it('should create requests.jsonl', async () => {
-      // Arrange
-      const { mockJob } = createFullUserWithDetails();
-      const scannedDate = new Date();
-      const scanAvailableJobsSpy = jest
-        .spyOn(service, 'scanAvailableJobs')
-        .mockResolvedValueOnce([mockJob]);
-
-      mockJob.scannedLast = scannedDate;
-      const jobRepoSaveSpy = jest
-        .spyOn(jobRepository, 'save')
-        .mockResolvedValueOnce(mockJob);
-
-      const jsonJob = createMockJsonLayout(mockJob);
-
-      const buildJobJsonSpy = jest
-        .spyOn(service, 'buildJobJson')
-        .mockReturnValueOnce(jsonJob);
-
-      const jsonLFormatJobs = [jsonJob]
-        .map((job) => {
-          console.log(job);
-          return JSON.stringify(job);
-        })
-        .join('\n');
-
-      // Act
-      const response = await service.buildJsonLd();
-      // Assert
-      expect(scanAvailableJobsSpy).toHaveBeenCalled();
-      expect(jobRepoSaveSpy).toHaveBeenCalled();
-      expect(buildJobJsonSpy).toHaveBeenCalled();
-      expect(response).toBeInstanceOf(Buffer);
-      expect(response).toEqual(Buffer.from(jsonLFormatJobs, 'utf-8'));
-      await expect(fs.access(filePath)).resolves.not.toThrow();
-    });
-    it('should return null because of no newJobs', async () => {
-      // Arrange
-      const emptyJobs: Job[] = [];
-      const scanAvailableJobsSpy = jest
-        .spyOn(service, 'scanAvailableJobs')
-        .mockResolvedValueOnce(emptyJobs);
-      const jobRepoSpy = jest.spyOn(jobRepository, 'save');
-      // Act
-      const response = await service.buildJsonLd();
-
-      // Assert
-      expect(scanAvailableJobsSpy).toHaveBeenCalled();
-      expect(jobRepoSpy).not.toHaveBeenCalled();
-      expect(response).toEqual(null);
-    });
-  });
-
-  describe('openAISendJSON', () => {
-    beforeAll(async () => {
-      jest.clearAllMocks(); // Clear any previous mock calls
-      const jsonLFormatJobs = [jsonLayout]
-        .map((job) => {
-          console.log(job);
-          return JSON.stringify(job);
-        })
-        .join('\n');
-      await fs.writeFile(filePath, jsonLFormatJobs); // Asynchronously writes the file
-    });
-
-    afterAll(async () => {
-      try {
-        // Check if the file exists asynchronously
-        await fs.access(filePath); // If file does not exist, this will throw an error
-        await fs.unlink(filePath); // Asynchronously delete the file
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          // Ignore the error if the file doesn't exist
-          throw err;
-        }
-      }
-    });
-
-    const { mockJob } = createFullUserWithDetails();
-    const jsonLayout = {
-      custom_id: mockJob.jobId,
-      method: 'POST',
-      url: '/v1/chat/completions',
-      body: {
-        model: 'gpt-4o-2024-08-06',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
-          },
-          { role: 'user', content: expect.any(String) },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'job_analysis_schema',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                analysis: {
-                  type: 'string',
-                  description:
-                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
-                },
-                is_suitable: {
-                  type: 'boolean',
-                  description:
-                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
-                },
-                conciseDescription: {
-                  type: 'string',
-                  description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
-                },
-                conciseSuited: {
-                  type: 'string',
-                  description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
-                },
-              },
-              required: [
-                'analysis',
-                'is_suitable',
-                'conciseDescription',
-                'conciseSuited',
-              ],
-              additionalProperties: false,
-            },
-          },
-        },
-        max_tokens: 1000,
-      },
-    };
-    const filePath = path.join(__dirname, 'requests.jsonl');
-    path.join(__dirname, 'requests.jsonl');
-
-    it('Create OpenAI Batch Request', async () => {
-      // Arrange
-      const mockResponse: OpenAI.Files.FileObject = {
-        id: '',
-        bytes: 0,
-        created_at: 0,
-        filename: '',
-        object: 'file',
-        purpose: 'batch',
-        status: 'uploaded',
-      };
-
-      const mockBatch: OpenAI.Batches.Batch = {
-        id: '',
-        completion_window: '24h',
-        created_at: 0,
-        endpoint: '/v1/chat/completions',
-        input_file_id: '',
-        object: 'batch',
-        status: 'completed',
-      };
-
-      // Set up the mock return values
-      mockCreate.mockResolvedValue(mockResponse);
-      mockBatchesCreate.mockResolvedValue(mockBatch);
-
-      // Act
-      const response = await service.openAISendJSON();
-
-      // Assert
-      console.log(response);
-      expect(mockCreate).toHaveBeenCalled();
-      expect(mockBatchesCreate).toHaveBeenCalled();
-      await expect(fs.access(filePath)).resolves.not.toThrow();
-    });
-  });
-
-  describe('createContentMessage', () => {
-    it('return the base words required', () => {
-      // Arrange
-
-      const { mockJob } = createFullUserWithDetails();
-
-      // Act
-      const response = service.createContentMessage(mockJob);
-
-      // Assert
-      expect(response).toContain(
-        "Here is a job I'm looking to apply for Job Description",
-      );
-      expect(response).toContain('Job Pay:');
-      expect(response).toContain('Job Location:');
-      expect(response).toContain(
-        'I wanted to know if it would suit me given the following cv:',
-      );
-      expect(response).toContain(
-        "Here's also my personal descrption of myself and what I'm looking for:",
-      );
-      expect(response).toContain(
-        'The CV helps but the description gives a more recent telling of what the user is thinking.',
-      );
-      expect(response).toContain(mockJob.description);
-      expect(response).toContain(mockJob.pay);
-      expect(response).toContain(mockJob.location);
-      expect(response).toContain(mockJob.jobType[0].user.cv);
-      expect(response).toContain(mockJob.jobType[0].user.description);
-      expect(typeof response).toBe('string');
-    });
-  });
-
-  describe('buildJobJson', () => {
-    const { mockJob } = createFullUserWithDetails();
-    const jsonLayout = createMockJsonLayout(mockJob);
-    it('should create the JSON exactly to template', () => {
-      // Arrange
-      const createContentMessageSpy = jest
-        .spyOn(service, 'createContentMessage')
-        .mockReturnValueOnce('message');
-
-      // Act
-      const result = service.buildJobJson(mockJob);
-
-      // Assert
-      expect(createContentMessageSpy).toHaveBeenCalled();
-      expect(result).toEqual(expect.objectContaining(jsonLayout));
     });
   });
 

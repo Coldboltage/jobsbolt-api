@@ -1,16 +1,17 @@
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { JobType } from '../../job-type/entities/job-type.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 
 @Entity()
 export class Job {
-  @PrimaryGeneratedColumn('uuid') // Fairly sure we can't have two of the same jobId so we'll use this
+  @PrimaryGeneratedColumn('uuid') // Fairly sure we can't have two of the same indeedId so we'll use this
   @ApiProperty()
   id: string;
 
   @Column()
   @ApiProperty()
-  jobId: string;
+  indeedId: string;
 
   @Column({ default: false })
   @ApiProperty()
@@ -56,6 +57,10 @@ export class Job {
   @ApiProperty()
   conciseSuited: string;
 
+  @OneToOne(() => CoverLetter, (coverLetter) => coverLetter.job)
+  @JoinColumn()
+  coverLetter: CoverLetter;
+
   // Management
 
   @Column('boolean', { default: false })
@@ -80,7 +85,7 @@ export class JobInfoInterface {
     format: 'uuidv4',
     description: 'Unique Identifer for job record',
   })
-  jobId: string;
+  indeedId: string;
 
   @ApiProperty()
   jobTypeId: string;
@@ -130,25 +135,25 @@ export interface IndividualJobFromBatchChoice {
 export interface ChatCompletionMessage {
   role: string;
   /**
-   * A JSON string that can be parsed into a ParsedContent object.
+   * A JSON string that can be parsed into a ParsedJobContent object.
    */
   content: string;
 }
 
-export interface IndividualJobFromBatchResponseBody {
-  analysis: string;
-  is_suitable: boolean;
-}
+// export interface IndividualJobFromBatchResponseBody {
+//   analysis: string;
+//   is_suitable: boolean;
+// }
 
 export interface CompleteJobParse {
-  jobId: string;
+  indeedId: string;
   summary: string;
   suited: boolean;
   conciseDescription: string;
   conciseSuited: string;
 }
 
-export interface ParsedContent {
+export interface ParsedJobContent {
   analysis: string;
   is_suitable: boolean;
   conciseDescription: string;
