@@ -13,8 +13,6 @@ const databaseEnvSchema = z.object({
   TYPEORM_DATABASE: z.string(),
 });
 
-export type DatabaseConfig = z.infer<typeof databaseEnvSchema>;
-
 export const validateDatabaseEnv = (config: Record<string, unknown>) => {
   const databaseValidatedEnv = databaseEnvSchema.safeParse(config);
   if (!databaseValidatedEnv.success) {

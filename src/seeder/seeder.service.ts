@@ -31,7 +31,7 @@ export class UserSeeder {
       saltOrRounds,
     );
 
-    await this.userRepository.save({
+    return this.userRepository.save({
       name: this.userConfig.name,
       email: this.userConfig.email,
       password: passwordHash,
