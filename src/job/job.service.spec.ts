@@ -89,59 +89,68 @@ describe('JobService', () => {
 
   const createFullUserWithDetails = () => {
     const mockindeedId = '123';
-    const mockJob: Job = {
-      id: faker.string.uuid(),
-      indeedId: mockindeedId,
-      applied: false,
-      link: `https://www.indeed.com/viewjob?jk=${mockindeedId}`,
-      name: faker.person.jobTitle(),
-      companyName: faker.company.name(),
-      date: new Date(),
-      description: faker.person.jobDescriptor(),
-      pay: String(faker.helpers.rangeToNumber({ min: 15, max: 100 })),
-      location: faker.location.city(),
-      summary: null,
-      conciseDescription: null,
-      conciseSuited: null,
-      suited: false,
-      jobType: null,
-      scannedLast: null,
-      notification: false,
-      coverLetter: new CoverLetter(),
-    };
+    // Create an instance of Job
+    const mockJob = new Job();
+    mockJob.id = faker.string.uuid();
+    mockJob.indeedId = mockindeedId;
+    mockJob.applied = false;
+    mockJob.link = `https://www.indeed.com/viewjob?jk=${mockindeedId}`;
+    mockJob.name = faker.person.jobTitle();
+    mockJob.companyName = faker.company.name();
+    mockJob.date = new Date();
+    mockJob.description = faker.person.jobDescriptor();
+    mockJob.pay = String(faker.helpers.rangeToNumber({ min: 15, max: 100 }));
+    mockJob.location = faker.location.city();
+    mockJob.summary = null;
+    mockJob.conciseDescription = null;
+    mockJob.conciseSuited = null;
+    mockJob.suited = false;
+    mockJob.jobType = null;
+    mockJob.scannedLast = null;
+    mockJob.notification = false;
+    mockJob.coverLetter = new CoverLetter();
 
-    const mockJobTypeEntity: JobType = {
-      id: faker.string.uuid(),
-      name: faker.person.jobTitle(),
-      location: faker.location.city(),
-      user: null,
-      jobs: [mockJob],
-      date: undefined,
-      active: false,
-      desiredPay: 0,
-      desiredPayUnit: PayUnits.MONTHLY,
-      description: '',
-    };
+    // Create an instance of JobType
+    const mockJobTypeEntity = new JobType();
+    mockJobTypeEntity.id = faker.string.uuid();
+    mockJobTypeEntity.name = faker.person.jobTitle();
+    mockJobTypeEntity.location = faker.location.city();
+    mockJobTypeEntity.user = null;
+    mockJobTypeEntity.jobs = [mockJob];
+    mockJobTypeEntity.date = undefined;
+    mockJobTypeEntity.active = false;
+    mockJobTypeEntity.desiredPay = 0;
+    mockJobTypeEntity.desiredPayUnit = PayUnits.MONTHLY;
+    mockJobTypeEntity.description = '';
 
-    const mockUser: User = {
-      id: faker.string.uuid(),
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      password: faker.internet.password(),
-      date: new Date(),
-      cv: faker.lorem.lines(),
-      discordId: faker.internet.userName(),
-      description: faker.lorem.lines(),
-      roles: [Role.USER],
-      jobType: [mockJobTypeEntity],
-      baseCoverLetter: faker.lorem.paragraph(),
-      userTalk: faker.lorem.paragraph(),
-    };
+    // Create an instance of User
+    const mockUser = new User();
+    mockUser.id = faker.string.uuid();
+    mockUser.name = faker.person.fullName();
+    mockUser.email = faker.internet.email();
+    mockUser.password = faker.internet.password();
+    mockUser.date = new Date();
+    mockUser.cv = faker.lorem.lines();
+    mockUser.discordId = faker.internet.userName();
+    mockUser.description = faker.lorem.lines();
+    mockUser.roles = [Role.USER];
+    mockUser.jobType = [mockJobTypeEntity];
+    mockUser.baseCoverLetter = faker.lorem.paragraph();
+    mockUser.userTalk = faker.lorem.paragraph();
 
+    // Create an instance of CoverLetter
+    const mockCoverLetter = new CoverLetter();
+    mockCoverLetter.id = faker.string.uuid();
+    mockCoverLetter.userPitch = faker.lorem.paragraph();
+    mockCoverLetter.generatedCoverLetter = faker.lorem.paragraph();
+    mockCoverLetter.batch = false;
+    mockCoverLetter.job = mockJob;
+
+    // Set relationships
     mockJob.jobType = [mockJobTypeEntity];
     mockJobTypeEntity.user = mockUser;
-
-    return { mockUser, mockJobTypeEntity, mockJob };
+    mockJob.coverLetter = mockCoverLetter;
+    return { mockUser, mockJobTypeEntity, mockJob, mockCoverLetter };
   };
 
   // const createMockJsonLayout = (mockJob: Job): JobJson => {
@@ -842,9 +851,46 @@ describe('JobService', () => {
     });
   });
 
-  // describe('findAllAppliedJobs', () => {
-  //   it('should find all jobs for a user with the correct state', async () => {
+  describe('findAllCoverLetterToApply', () => {
+    it('should find all users who have cover letters generated though have not applied yet', async () => {
+      // Arrange
+      const { mockUser, mockJob, mockCoverLetter } =
+        createFullUserWithDetails();
+      mockJob.applied = false;
+      mockJob.suited = true;
+      mockCoverLetter.batch = true;
+      mockCoverLetter.generatedCoverLetter = faker.lorem.sentence();
 
-  //   })
-  // })
+      const mockSelectedMockJob = new Job();
+
+      mockSelectedMockJob.link = mockJob.link;
+      mockSelectedMockJob.applied = false;
+
+      const mockSelectedCoverLetter = new CoverLetter();
+
+      mockSelectedCoverLetter.generatedCoverLetter =
+        mockCoverLetter.generatedCoverLetter;
+      mockSelectedCoverLetter.userPitch = mockCoverLetter.userPitch;
+
+      mockSelectedMockJob.coverLetter = mockSelectedCoverLetter;
+
+      const jobRepoFindSpy = jest
+        .spyOn(service, 'findAllCoverLetterToApply')
+        .mockResolvedValueOnce([mockSelectedMockJob]);
+      // Act
+      const response = await service.findAllCoverLetterToApply(mockUser.id);
+      // Assert
+      expect(response).toEqual([
+        {
+          link: mockJob.link,
+          applied: false,
+          coverLetter: {
+            generatedCoverLetter: mockCoverLetter.generatedCoverLetter,
+            userPitch: mockCoverLetter.userPitch,
+          },
+        },
+      ]);
+      expect(jobRepoFindSpy).toHaveBeenCalled();
+    });
+  });
 });

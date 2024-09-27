@@ -1,6 +1,10 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { DeepPartial, In, IsNull, Not, Repository } from 'typeorm';
 import {
   CompleteJobParse,
   IndividualJobFromBatch,
@@ -17,6 +21,7 @@ import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
 
 import { UtilsService } from '../utils/utils.service';
+import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
 const path = require('path');
 const fs = require('fs');
 
@@ -273,6 +278,48 @@ export class JobService implements OnApplicationBootstrap {
         },
       },
     });
+  }
+
+  async findAllCoverLetterToApply(userId: string): Promise<DeepPartial<Job[]>> {
+    const jobsToApplyEntity = await this.jobRepository.find({
+      where: {
+        applied: false,
+        suited: true,
+        coverLetter: {
+          batch: true,
+          generatedCoverLetter: Not(IsNull()),
+        },
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+      },
+      relations: {
+        coverLetter: true,
+        jobType: {
+          user: true,
+        },
+      },
+      select: {
+        link: true,
+        applied: true,
+        coverLetter: {
+          generatedCoverLetter: true,
+          userPitch: true,
+        },
+        jobType: false,
+      },
+    });
+    if (!jobsToApplyEntity)
+      throw new NotFoundException('no_cover_letters_ready');
+
+    const result = jobsToApplyEntity.map((job) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { jobType, ...rest } = job;
+      return rest;
+    });
+    return result;
   }
 
   async sendUserNewJobs(userId: string) {

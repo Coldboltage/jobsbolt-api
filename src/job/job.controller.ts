@@ -17,6 +17,7 @@ import { Role } from '../auth/role.enum';
 import { RolesGuard } from '../auth/roles.guard';
 import {
   ApiBearerAuth,
+  ApiExpectationFailedResponse,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
@@ -24,6 +25,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Job } from './entities/job.entity';
+import { DeepPartial } from 'typeorm';
 
 @ApiTags('job')
 @Controller('job')
@@ -49,11 +51,6 @@ export class JobController {
   })
   byBot(@Param('id') id: string, @Body() createJobDto: CreateJobDto) {
     return this.jobService.addJobsByBot(id, createJobDto.jobs);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') indeedId: string) {
-    return this.jobService.findOne(indeedId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -169,6 +166,29 @@ export class JobController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Find all jobs for user which have a generated cover letter and have not been applied for',
+  })
+  @ApiOkResponse({
+    description:
+      'All jobs have been found where cover letter is generated but not applied for',
+    type: [Job],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiExpectationFailedResponse({
+    description: 'No cover letter generated for any job.',
+  })
+  @Get('cover-letter-to-apply')
+  findAllCoverLetterToApply(@Req() req): Promise<DeepPartial<Job[]>> {
+    return this.jobService.findAllCoverLetterToApply(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Patch('application-state/:indeedId/:state')
   @ApiBearerAuth()
@@ -196,5 +216,10 @@ export class JobController {
       indeedId,
       state,
     );
+  }
+
+  @Get(':id')
+  findOne(@Param('id') indeedId: string) {
+    return this.jobService.findOne(indeedId);
   }
 }
