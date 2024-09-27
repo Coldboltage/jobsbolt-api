@@ -22,19 +22,34 @@ import { validateRabbitmqEnv } from './config/rabbitmq/rabbitmq.schema';
 import { CoverLetterModule } from './cover-letter/cover-letter.module';
 import { UtilsModule } from './utils/utils.module';
 import { SeederModule } from './seeder/seeder.module';
+import seedConfig from './config/seed/seed.config';
+import { validateSeederEnv } from './config/seed/seed.schema';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: '.env',
-      load: [databaseConfig, secretConfig, generalConfig, rabbitmqConfig],
+      load: [
+        databaseConfig,
+        secretConfig,
+        generalConfig,
+        rabbitmqConfig,
+        seedConfig,
+      ],
       isGlobal: true,
       validate: (config) => {
         const databaseVar = validateDatabaseEnv(config);
         const generalVar = validateGeneralEnv(config);
         const secretVar = validateSecretEnv(config);
         const rabbitmqVar = validateRabbitmqEnv(config);
-        return { ...databaseVar, ...generalVar, ...secretVar, ...rabbitmqVar };
+        const seederVar = validateSeederEnv(config);
+        return {
+          ...databaseVar,
+          ...generalVar,
+          ...secretVar,
+          ...rabbitmqVar,
+          ...seederVar,
+        };
       },
     }),
     ScheduleModule.forRoot(),
