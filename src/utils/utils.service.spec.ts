@@ -13,6 +13,9 @@ import { User } from '../user/entities/user.entity';
 import { Role } from '../auth/role.enum';
 import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
 import OpenAI from 'openai';
+import { ConfigService } from '@nestjs/config';
+import { response } from 'express';
+import axios from 'axios';
 const path = require('path');
 
 // Manually mock the OpenAI class
@@ -38,6 +41,7 @@ const mockBatchesCreate = jest.fn();
 
 describe('UtilsService', () => {
   let service: UtilsService;
+  let configService: ConfigService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -47,6 +51,7 @@ describe('UtilsService', () => {
       .compile();
 
     service = module.get<UtilsService>(UtilsService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -350,7 +355,6 @@ describe('UtilsService', () => {
       const jsonJob = createMockJobJsonLayout(mockJob);
       const filePath = path.join(__dirname, 'job-requests.jsonl');
 
-
       const buildJobJsonSpy = jest
         .spyOn(service, 'buildJobJson')
         .mockReturnValueOnce(jsonJob);
@@ -376,7 +380,6 @@ describe('UtilsService', () => {
       const jsonCover = createMockCoverJsonLayout(mockCoverLetter);
       const filePath = path.join(__dirname, 'cover-requests.jsonl');
 
-
       const buildJobJsonSpy = jest
         .spyOn(service, 'buildCoverLetterJson')
         .mockReturnValueOnce(jsonCover);
@@ -399,6 +402,7 @@ describe('UtilsService', () => {
   });
 
   describe('openAISendJSON', () => {
+    const filePath = path.join(__dirname, 'job-requests.jsonl');
     beforeAll(async () => {
       jest.clearAllMocks(); // Clear any previous mock calls
       const jsonLFormatJobs = [jsonLayout]
@@ -410,18 +414,18 @@ describe('UtilsService', () => {
       await fs.writeFile(filePath, jsonLFormatJobs); // Asynchronously writes the file
     });
 
-    afterAll(async () => {
-      try {
-        // Check if the file exists asynchronously
-        await fs.access(filePath); // If file does not exist, this will throw an error
-        await fs.unlink(filePath); // Asynchronously delete the file
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          // Ignore the error if the file doesn't exist
-          throw err;
-        }
-      }
-    });
+    // afterAll(async () => {
+    //   try {
+    //     // Check if the file exists asynchronously
+    //     await fs.access(filePath); // If file does not exist, this will throw an error
+    //     await fs.unlink(filePath); // Asynchronously delete the file
+    //   } catch (err) {
+    //     if (err.code !== 'ENOENT') {
+    //       // Ignore the error if the file doesn't exist
+    //       throw err;
+    //     }
+    //   }
+    // });
 
     const { mockJob } = createFullUserWithDetails();
     const jsonLayout = {
@@ -478,8 +482,6 @@ describe('UtilsService', () => {
         max_tokens: 1000,
       },
     };
-    const filePath = path.join(__dirname, 'job-requests.jsonl');
-    // path.join(__dirname, 'requests.jsonl');
 
     it('Create OpenAI Batch Request', async () => {
       // Arrange
@@ -515,6 +517,94 @@ describe('UtilsService', () => {
       expect(mockCreate).toHaveBeenCalled();
       expect(mockBatchesCreate).toHaveBeenCalled();
       await expect(fs.access(filePath)).resolves.not.toThrow();
+    });
+
+    it('should throw an error', async () => {
+      // Arrange
+      try {
+        // Check if the file exists asynchronously
+        await fs.access(filePath); // If file does not exist, this will throw an error
+        await fs.unlink(filePath); // Asynchronously delete the file
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          // Ignore the error if the file doesn't exist
+          throw err;
+        }
+      }
+
+      // Act
+      const response = service.openAISendJSON('job');
+
+      // Assert
+      await expect(response).rejects.toThrow('File not found');
+    });
+  });
+
+  describe('checkStatus', () => {
+    it('should return true if all messages are completed', async () => {
+      // Arrange
+      const userConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('username');
+      const userPasswordConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('password');
+
+      jest.spyOn(axios, 'get').mockResolvedValueOnce({
+        data: {
+          messages: 0,
+        },
+      });
+
+      // Act
+      const response = await service.checkStatus();
+
+      // Assert
+      expect(response).toEqual(true)
+    });
+
+    it('should return false if all messages are completed', async () => {
+      // Arrange
+      const userConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('username');
+      const userPasswordConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('password');
+
+      jest.spyOn(axios, 'get').mockResolvedValueOnce({
+        data: {
+          messages: 1,
+        },
+      });
+
+      // Act
+      const response = await service.checkStatus();
+
+      // Assert
+      expect(response).toEqual(false)
+    });
+
+    it('should return false if error in axios call', async () => {
+      // Arrange
+      const userConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('username');
+      const userPasswordConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('password');
+
+      jest.spyOn(axios, 'get').mockRejectedValueOnce({
+        response: {
+          status: 401,
+        },
+      });
+
+      // Act
+      const response = await service.checkStatus();
+
+      // Assert
+      expect(response).toEqual(false)
     });
   });
 });
