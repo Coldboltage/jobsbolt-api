@@ -202,6 +202,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
       console.log(`File found: ${filePath}`);
     } else {
       console.log(`File not found: ${filePath}`);
+      throw new Error('File not found');
     }
 
     const response = await openai.files.create({
@@ -241,7 +242,9 @@ Goal: The generated cover letter should reflect the user's personal voice and st
         },
       });
 
-      const queueInfo = response.data;
+      const queueInfo: {
+        messages: number;
+      } = response.data;
       console.log(queueInfo.messages);
       if (queueInfo.messages === 0) {
         console.log('No more messages');
