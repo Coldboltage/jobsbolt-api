@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "mutate": [
+    "src/job/job.service.ts",
+    "!src/**/*.spec.ts"
+  ],
+  "testRunner": "jest",
+  "jest": {
+    "configFile": "./jest.config.js"
+  },
+  "checkers": [
+    "typescript"
+  ],
+  "tsconfigFile": "tsconfig.json",
+  "concurrency": 12,
+  "reporters": [
+    "clear-text",
+    "progress",
+    "html"
+  ],
+  "mutator": {
+    "excludedMutations": [
+      "StringLiteral",
+      "BooleanLiteral"
+    ]
+  }
+}
