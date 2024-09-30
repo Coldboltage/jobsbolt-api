@@ -737,6 +737,9 @@ describe('JobService', () => {
       expect(jobsRepositoryFindSpy).toHaveBeenCalled();
       expect(jobRepositorySaveSpy).toHaveBeenCalled();
       expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('adding existing job'),
+      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('jobType pushed and updated'),
       );
     });
