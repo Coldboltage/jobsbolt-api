@@ -231,7 +231,6 @@ Goal: The generated cover letter should reflect the user's personal voice and st
     const password = this.configService.get<string>(
       'secrets.rabbitmq.password',
     );
-    console.log(username);
     const url = `${rabbitMqUrl}/api/queues/%2F/jobs_queue`;
 
     try {

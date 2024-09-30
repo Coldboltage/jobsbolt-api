@@ -37,9 +37,7 @@ describe('JobController', () => {
   describe('byBot', () => {
     it('should test if the service exists', async () => {
       // Arrange
-      const addJobsByBotSpy = jest
-        .spyOn(service, 'addJobsByBot')
-        .mockResolvedValueOnce();
+      const addJobsByBotSpy = jest.spyOn(service, 'addJobsByBot');
 
       // Act
       await controller.byBot('123', {

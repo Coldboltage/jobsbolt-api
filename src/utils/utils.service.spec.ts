@@ -14,7 +14,6 @@ import { Role } from '../auth/role.enum';
 import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
 import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
-import { response } from 'express';
 import axios from 'axios';
 const path = require('path');
 
@@ -549,6 +548,7 @@ describe('UtilsService', () => {
       const userPasswordConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce('password');
+      const consoleSpy = jest.spyOn(console, 'log');
 
       jest.spyOn(axios, 'get').mockResolvedValueOnce({
         data: {
@@ -560,7 +560,11 @@ describe('UtilsService', () => {
       const response = await service.checkStatus();
 
       // Assert
-      expect(response).toEqual(true)
+      expect(response).toEqual(true);
+      expect(userConfigServiceSpy).toHaveBeenCalled();
+      expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalledWith('No more messages');
     });
 
     it('should return false if all messages are completed', async () => {
@@ -571,6 +575,7 @@ describe('UtilsService', () => {
       const userPasswordConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce('password');
+      const consoleSpy = jest.spyOn(console, 'log');
 
       jest.spyOn(axios, 'get').mockResolvedValueOnce({
         data: {
@@ -582,7 +587,10 @@ describe('UtilsService', () => {
       const response = await service.checkStatus();
 
       // Assert
-      expect(response).toEqual(false)
+      expect(response).toEqual(false);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Still a message being processed',
+      );
     });
 
     it('should return false if error in axios call', async () => {
@@ -604,7 +612,48 @@ describe('UtilsService', () => {
       const response = await service.checkStatus();
 
       // Assert
-      expect(response).toEqual(false)
+      expect(response).toEqual(false);
+      expect(userConfigServiceSpy).toHaveBeenCalled();
+      expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
+    });
+
+    it('should return true if implementations are as is', async () => {
+      // Arrange
+      const mockUsername = faker.internet.userName();
+      const mockPassword = faker.internet.password();
+
+      const userConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce(mockUsername);
+      const userPasswordConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce(mockPassword);
+
+      const axiosSpy = jest.spyOn(axios, 'get').mockResolvedValueOnce({
+        data: {
+          messages: 0,
+        },
+      });
+      // Act
+      const response = await service.checkStatus();
+
+      // Assert
+      expect(userConfigServiceSpy).toHaveBeenCalledWith(
+        'secrets.rabbitmq.username',
+      );
+      expect(userPasswordConfigServiceSpy).toHaveBeenCalledWith(
+        'secrets.rabbitmq.password',
+      );
+      expect(axiosSpy).toHaveBeenCalledWith(
+        `http://localhost:15672/api/queues/%2F/jobs_queue`,
+        {
+          auth: {
+            username: mockUsername,
+            password: mockPassword,
+          },
+        },
+      );
+      expect(response).toEqual(true);
     });
   });
 });
