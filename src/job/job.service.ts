@@ -40,6 +40,7 @@ export class JobService implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     const isTest = this.configService.get<string>('general.testBatch');
     const discordTest = this.configService.get<string>('general.discordTest');
+    console.log(isTest, discordTest);
     if (isTest === 'true') {
       await this.createBatchJob();
     }
@@ -62,11 +63,6 @@ export class JobService implements OnApplicationBootstrap {
 
     await this.utilService.buildJsonLd(updatedNewJobs, 'job');
 
-    // if (response === null) {
-    //   console.log('no jobs available for buildJsonLd');
-    //   return;
-    // }
-
     const batch = await this.utilService.openAISendJSON('job');
     await this.batchService.create({
       id: batch.id,
@@ -82,7 +78,7 @@ export class JobService implements OnApplicationBootstrap {
     const allResponses = await this.batchService.checkPendingBatches(
       BatchType.JOB,
     );
-    if (!allResponses) return;
+    if (!allResponses || allResponses.length === 0) return;
     for (const job of allResponses) {
       const completeJob = this.processJobObject(job);
       await this.updateFromCompleteJobParse(completeJob);
@@ -111,12 +107,11 @@ export class JobService implements OnApplicationBootstrap {
     return object;
   }
 
-  async addJobsByBot(jobTypeId: string, jobs: JobInfoInterface[]) {
+  async addJobsByBot(jobTypeId: string, scrappedJobs: JobInfoInterface[]) {
     // // All jobs rekate to a jobType
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
-    console.log(jobTypeEntity);
     // Check which jobs exist already
-    const allJobsIds = jobs.map((job) => job.indeedId);
+    const allJobsIds = scrappedJobs.map((scrappedJob) => scrappedJob.indeedId);
 
     // All Jobs currently in database checked and retrieved
     const existingJobRecords = await this.jobRepository.find({
@@ -126,32 +121,45 @@ export class JobService implements OnApplicationBootstrap {
       },
     });
 
-    const newJobs = jobs.filter((job) => {
-      return !existingJobRecords.some((existingJob) => {
-        return existingJob.indeedId === job.indeedId;
+    const existingJobs = existingJobRecords.filter((existingJob) =>
+      scrappedJobs.some((scrappedJob) => {
+        // Check if job exists
+        return existingJob.indeedId === scrappedJob.indeedId;
+      }),
+    );
+
+    const existingJobsDifferentJobType = existingJobs.filter((existingJob) =>
+      existingJob.jobType.every((jobType) => {
+        return jobType.id !== jobTypeEntity.id;
+      }),
+    ); // Ensure it's not the same jobType
+
+    const returnupdatedExistingJobAndType = [];
+
+    if (existingJobsDifferentJobType.length > 0) {
+      console.log('adding existing job');
+      for (const existingJob of existingJobsDifferentJobType) {
+        existingJob.jobType.push(jobTypeEntity);
+        const updatedExistingJobAndType =
+          await this.jobRepository.save(existingJob);
+        console.log(
+          `${updatedExistingJobAndType.indeedId} jobType pushed and updated`,
+        );
+        returnupdatedExistingJobAndType.push(updatedExistingJobAndType);
+      }
+      return returnupdatedExistingJobAndType;
+    }
+
+    const newJobs = scrappedJobs.filter((scrappedJob) => {
+      return existingJobRecords.every((existingJob) => {
+        return existingJob.indeedId !== scrappedJob.indeedId;
       });
     });
 
-    const existingJobDifferentJobType = existingJobRecords.filter(
-      (existingJob) =>
-        jobs.some(
-          (job) =>
-            existingJob.indeedId === job.indeedId && // Check if the job IDs match
-            !existingJob.jobType.some(
-              (existingJobType) => existingJobType.id === jobTypeId,
-            ), // Ensure it's not the same jobType
-        ),
-    );
-
-    // const newJobs = await this.jobRepository
-    //   .createQueryBuilder('job')
-    //   .select('job.indeedId')
-    //   .where('job.indeedId NOT IN (:...allJobsIds)', { allJobsIds })
-    //   .andWhere('job.jobTypeId = :jobTypeId', { jobTypeId })
-    //   .getMany();
-
     // Create all jobs
     for (const job of newJobs) {
+      console.log('array for newJobs');
+      console.log(newJobs);
       const jobEntity = await this.jobRepository.save({
         indeedId: job.indeedId,
         link: `https://www.indeed.com/viewjob?jk=${job.indeedId}`,
@@ -166,19 +174,7 @@ export class JobService implements OnApplicationBootstrap {
         companyName: job.companyName,
       });
       console.log(`${jobEntity.indeedId} added`);
-    }
-
-    if (existingJobDifferentJobType.length > 0) {
-      console.log('adding existing job');
-      for (const existingJob of existingJobDifferentJobType) {
-        existingJob.jobType.push(jobTypeEntity);
-        console.log(existingJob);
-        const updatedExistingJobAndType =
-          await this.jobRepository.save(existingJob);
-        console.log(
-          `${updatedExistingJobAndType.indeedId} jobType pushed and updated`,
-        );
-      }
+      return;
     }
   }
 
@@ -238,7 +234,6 @@ export class JobService implements OnApplicationBootstrap {
         suited: true,
       },
     });
-    console.log(allSuitedJobs.length);
     return allSuitedJobs;
   }
 
@@ -311,7 +306,7 @@ export class JobService implements OnApplicationBootstrap {
         jobType: false,
       },
     });
-    if (!jobsToApplyEntity)
+    if (!jobsToApplyEntity || jobsToApplyEntity.length === 0)
       throw new NotFoundException('no_cover_letters_ready');
 
     const result = jobsToApplyEntity.map((job) => {
@@ -386,7 +381,6 @@ export class JobService implements OnApplicationBootstrap {
     });
 
     jobEntity.applied = status;
-    console.log(jobEntity);
     return this.jobRepository.save(jobEntity);
   }
 }

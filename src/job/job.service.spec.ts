@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JobService } from './job.service';
 import { createMock } from '@golevelup/ts-jest';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository, UpdateResult } from 'typeorm';
 import {
   ChatCompletionMessage,
   CompleteJobParse,
@@ -12,7 +12,6 @@ import {
   IndividualJobFromBatchResponseBody,
   Job,
   JobInfoInterface,
-  JobJson,
   ParsedJobContent,
 } from './entities/job.entity';
 import { ConfigService } from '@nestjs/config';
@@ -87,6 +86,10 @@ describe('JobService', () => {
     utilsService = module.get<UtilsService>(UtilsService);
   });
 
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
   const createFullUserWithDetails = () => {
     const mockindeedId = '123';
     // Create an instance of Job
@@ -153,7 +156,49 @@ describe('JobService', () => {
     return { mockUser, mockJobTypeEntity, mockJob, mockCoverLetter };
   };
 
-  // const createMockJsonLayout = (mockJob: Job): JobJson => {
+  const createMockContent = (state: boolean): ParsedJobContent => {
+    return {
+      analysis: faker.lorem.sentence(),
+      is_suitable: state,
+      conciseDescription: faker.lorem.sentence(),
+      conciseSuited: faker.lorem.sentence(),
+    };
+  };
+
+  const createMockJob = (state: boolean): IndividualJobFromBatch => {
+    const mockContent = createMockContent(state);
+
+    const mockMessage: ChatCompletionMessage = {
+      role: '',
+      content: JSON.stringify(mockContent),
+    };
+
+    const mockChoice: IndividualJobFromBatchChoice = {
+      index: 0,
+      message: mockMessage,
+    };
+
+    const bodyMock: IndividualJobFromBatchResponseBody = {
+      id: '',
+      object: '',
+      created: 0,
+      model: '',
+      choices: [mockChoice],
+    };
+
+    const mockResponse: IndividualJobFromBatchResponse = {
+      status_code: 0,
+      request_id: '',
+      body: bodyMock,
+    };
+
+    return {
+      id: faker.string.uuid(),
+      custom_id: faker.string.uuid(),
+      response: mockResponse,
+      error: undefined,
+    };
+  };
   //   return {
   //     custom_id: mockJob.indeedId,
   //     method: 'POST',
@@ -217,8 +262,13 @@ describe('JobService', () => {
   describe('onApplicationBootstrap', () => {
     it('should send a discord message', async () => {
       // Arrange
-      jest.spyOn(configService, 'get').mockReturnValueOnce('false');
-      jest.spyOn(configService, 'get').mockReturnValueOnce('true');
+      const isTestSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('false');
+      const discordTestSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('true');
+      const consoleLogSpy = jest.spyOn(console, 'log');
 
       const createBatchJobSpy = jest.spyOn(service, 'createBatchJob');
       const sendDiscordNewJobMessageSpy = jest
@@ -229,6 +279,9 @@ describe('JobService', () => {
       await service.onApplicationBootstrap();
 
       // Assert
+      expect(isTestSpy).toHaveBeenCalledWith('general.testBatch');
+      expect(discordTestSpy).toHaveBeenCalledWith('general.discordTest');
+      expect(consoleLogSpy).toHaveBeenCalledWith('discord test activated');
       expect(createBatchJobSpy).not.toHaveBeenCalled();
       expect(sendDiscordNewJobMessageSpy).toHaveBeenCalled();
     });
@@ -255,8 +308,12 @@ describe('JobService', () => {
 
     it('should not run any functionality if both tests set to false', async () => {
       // Arrange
-      jest.spyOn(configService, 'get').mockReturnValueOnce('false');
-      jest.spyOn(configService, 'get').mockReturnValueOnce('false');
+      const isTestSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('false');
+      const isDiscordTestSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('false');
 
       const createBatchJobSpy = jest
         .spyOn(service, 'createBatchJob')
@@ -264,6 +321,7 @@ describe('JobService', () => {
       const sendDiscordNewJobMessageSpy = jest
         .spyOn(service, 'sendDiscordNewJobMessage')
         .mockResolvedValueOnce(undefined);
+      const consoleLogSpy = jest.spyOn(console, 'log');
 
       // Act
       await service.onApplicationBootstrap();
@@ -271,21 +329,28 @@ describe('JobService', () => {
       // Assert
       expect(createBatchJobSpy).not.toHaveBeenCalled();
       expect(sendDiscordNewJobMessageSpy).not.toHaveBeenCalled();
+      expect(isTestSpy).toHaveBeenCalledWith('general.testBatch');
+      expect(isDiscordTestSpy).toHaveBeenCalledWith('general.discordTest');
+      expect(consoleLogSpy).not.toHaveBeenCalledWith('discord test activated');
     });
   });
 
   describe('createBatchJob', () => {
     it('should not execute anything after scanAvailableJobs', async () => {
       // Arrange
+
       const scanAvailableJobsSpy = jest
         .spyOn(service, 'scanAvailableJobs')
         .mockResolvedValueOnce([]);
+
+      const jobRepositorySaveSpy = jest.spyOn(jobRepository, 'save');
 
       // Act
       const result = await service.createBatchJob();
       // Assert
       expect(scanAvailableJobsSpy).toHaveBeenCalled();
       expect(result).toEqual(null);
+      expect(jobRepositorySaveSpy).not.toHaveBeenCalled();
     });
 
     it('should execute batchsService.create', async () => {
@@ -293,9 +358,16 @@ describe('JobService', () => {
       const mockNewJob: Job = new Job();
       const mockNewJobsList: Job[] = [mockNewJob];
 
+      const updatedMockJob = structuredClone(mockNewJob);
+      updatedMockJob.scannedLast = new Date();
+
       const scanAvailableJobsSpy = jest
         .spyOn(service, 'scanAvailableJobs')
         .mockResolvedValueOnce(mockNewJobsList);
+
+      const jobRepositorySaveSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce([updatedMockJob] as any);
 
       const mockBuffer = Buffer.from('some test data');
 
@@ -322,7 +394,9 @@ describe('JobService', () => {
       await service.createBatchJob();
       // Assert
       expect(scanAvailableJobsSpy).toHaveBeenCalled();
-      expect(buildJobJsonSpy).toHaveBeenCalled();
+      expect(jobRepositorySaveSpy).toHaveBeenCalled();
+      expect(jobRepositorySaveSpy).toHaveBeenCalledWith([updatedMockJob]);
+      expect(buildJobJsonSpy).toHaveBeenCalledWith([updatedMockJob], 'job');
       expect(openAISendJSONSpy).toHaveBeenCalled();
       expect(openAISendJSONSpy).toHaveBeenCalledWith('job');
       expect(batchServiceCreateSpy).toHaveBeenCalled();
@@ -408,50 +482,6 @@ describe('JobService', () => {
   // });
 
   describe('processJobObject', () => {
-    const createMockContent = (state: boolean): ParsedJobContent => {
-      return {
-        analysis: '',
-        is_suitable: state,
-        conciseDescription: '',
-        conciseSuited: '',
-      };
-    };
-
-    const createMockJob = (state: boolean): IndividualJobFromBatch => {
-      const mockContent = createMockContent(state);
-
-      const mockMessage: ChatCompletionMessage = {
-        role: '',
-        content: JSON.stringify(mockContent),
-      };
-
-      const mockChoice: IndividualJobFromBatchChoice = {
-        index: 0,
-        message: mockMessage,
-      };
-
-      const bodyMock: IndividualJobFromBatchResponseBody = {
-        id: '',
-        object: '',
-        created: 0,
-        model: '',
-        choices: [mockChoice],
-      };
-
-      const mockResponse: IndividualJobFromBatchResponse = {
-        status_code: 0,
-        request_id: '',
-        body: bodyMock,
-      };
-
-      return {
-        id: faker.string.uuid(),
-        custom_id: faker.string.uuid(),
-        response: mockResponse,
-        error: undefined,
-      };
-    };
-
     it('should process the Batch Job Input with false suited', () => {
       // Arrange
       const mockJob = createMockJob(false);
@@ -497,60 +527,33 @@ describe('JobService', () => {
   });
 
   describe('addJobsByBot', () => {
-    const { mockJob, mockJobTypeEntity } = createFullUserWithDetails();
-    // const mockJobTypeId = faker.string.uuid();
-    // const mockJobTypeEntity: JobType = {
-    //   id: '',
-    //   name: '',
-    //   location: '',
-    //   user: new User(),
-    //   jobs: [],
-    //   date: undefined,
-    //   active: false,
-    //   desiredPay: 0,
-    //   desiredPayUnit: PayUnits.MONTHLY,
-    //   description: '',
-    // };
-    const mockJobInfo: JobInfoInterface = {
-      indeedId: mockJob.indeedId,
-      jobTypeId: mockJob.jobType[0].id,
-      name: mockJob.name,
-      description: mockJob.description,
-      pay: mockJob.pay,
-      location: mockJob.location,
-      companyName: mockJob.companyName,
-    };
-    // const jobEntity: Job = {
-    //   id: faker.string.uuid(),
-    //   indeedId: mockJob.indeedId,
-    //   applied: false,
-    //   link: `https://www.indeed.com/viewjob?jk=${mockJob.indeedId}`,
-    //   name: mockJob.name,
-    //   companyName: mockJob.companyName,
-    //   date: new Date(),
-    //   description: mockJob.description,
-    //   pay: mockJob.pay,
-    //   location: mockJob.location,
-    //   summary: null,
-    //   conciseDescription: null,
-    //   conciseSuited: null,
-    //   suited: false,
-    //   jobType: [mockJobTypeEntity],
-    //   scannedLast: null,
-    //   notification: false,
-    // };
-
     it('should add a job', async () => {
       // Arrange
+      const { mockJob, mockJobTypeEntity } = createFullUserWithDetails();
+      const mockJobInfo: JobInfoInterface = {
+        indeedId: mockJob.indeedId,
+        jobTypeId: mockJob.jobType[0].id,
+        name: mockJob.name,
+        description: mockJob.description,
+        pay: mockJob.pay,
+        location: mockJob.location,
+        companyName: mockJob.companyName,
+      };
+
+      const copyJob = structuredClone(mockJob);
+      copyJob.indeedId = '1234';
+      copyJob.jobType[0].id = 'random';
+
       const jobTypeEntitySpy = jest
         .spyOn(jobTypeService, 'findOne')
         .mockResolvedValueOnce(mockJobTypeEntity);
       const jobRepositoryFindSpy = jest
         .spyOn(jobRepository, 'find')
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([copyJob]);
       const jobRepositorySaveSpy = jest
         .spyOn(jobRepository, 'save')
         .mockResolvedValueOnce(mockJob);
+      const consoleLogSpy = jest.spyOn(console, 'log')
 
       // Act
       await service.addJobsByBot(mockJobTypeEntity.id, [mockJobInfo]);
@@ -570,13 +573,38 @@ describe('JobService', () => {
         companyName: mockJobInfo.companyName,
       });
       expect(jobTypeEntitySpy).toHaveBeenCalled();
+      expect(jobTypeEntitySpy).toHaveBeenCalledWith(mockJobTypeEntity.id);
       expect(jobRepositoryFindSpy).toHaveBeenCalled();
-      expect(jobRepositorySaveSpy).toHaveBeenCalledTimes(1);
+      expect(jobRepositoryFindSpy).toHaveBeenCalledWith({
+        where: { indeedId: In([mockJobInfo.indeedId]) },
+        relations: {
+          jobType: true,
+        },
+      });
+      expect(jobRepositorySaveSpy).toHaveBeenCalledWith({
+        indeedId: mockJob.indeedId,
+        link: `https://www.indeed.com/viewjob?jk=${mockJob.indeedId}`,
+        name: mockJob.name,
+        date: expect.any(Date),
+        description: mockJob.description,
+        pay: mockJob.pay,
+        location: mockJob.location,
+        suited: false,
+        jobType: [mockJobTypeEntity],
+        scannedLast: null,
+        companyName: mockJob.companyName,
+      });
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('array for newJobs'),
+      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`${mockJob.indeedId} added`),
+      );
     });
 
-    it('should push a new jobsType record to the already existing job', async () => {
+    it('should not add a new job as the job already', async () => {
       // Arrange
-      // const { mockJobTypeEntity, mockJob } = createFullUserWithDetails();
+      const { mockJobTypeEntity, mockJob } = createFullUserWithDetails();
       const mockJobInfo: JobInfoInterface = {
         indeedId: mockJob.indeedId,
         jobTypeId: mockJob.jobType[0].id,
@@ -587,50 +615,30 @@ describe('JobService', () => {
         companyName: mockJob.companyName,
       };
 
-      const newUnusedMockJobTypeEntity: JobType = {
-        id: 'rawr',
-        name: '',
-        location: '',
-        user: new User(),
-        jobs: [mockJob],
-        date: undefined,
-        active: false,
-        desiredPay: 0,
-        desiredPayUnit: PayUnits.HOURLY,
-        description: '',
-      };
-
-      const jobTypeEntityFindOneSpy = jest
-        .spyOn(jobTypeService, 'findOne')
-        .mockResolvedValueOnce(new JobType());
-      const jobsRepositoryFindSpy = jest
-        .spyOn(jobRepository, 'find')
-        .mockResolvedValueOnce([mockJob]); // This reps all that match
-
-      const updatedMockJob = structuredClone(mockJob);
-
-      // Modify the deep copy without affecting the original mockJob
-      updatedMockJob.jobType.push(newUnusedMockJobTypeEntity);
-
-      const jobRepositorySaveSpy = jest
-        .spyOn(jobRepository, 'save')
-        .mockResolvedValueOnce(updatedMockJob);
-
-      // Act
-      await service.addJobsByBot(newUnusedMockJobTypeEntity.id, [mockJobInfo]);
-
-      // Assert
-      // expect(jobRepositorySaveSpy).toHaveBeenCalledWith(updatedMockJob);
-      expect(jobTypeEntityFindOneSpy).toHaveBeenCalled();
-      expect(jobsRepositoryFindSpy).toHaveBeenCalled();
-      expect(jobRepositorySaveSpy).toHaveBeenCalled();
-    });
-
-    it('should not add a new job as the job already exists', async () => {
-      // Arrange
       const existingJobEntity: Job = {
         id: '',
         indeedId: mockJob.indeedId,
+        applied: false,
+        link: '',
+        name: '',
+        companyName: '',
+        date: undefined,
+        description: '',
+        pay: '',
+        location: '',
+        summary: '',
+        conciseDescription: '',
+        conciseSuited: '',
+        suited: false,
+        jobType: [mockJobTypeEntity],
+        scannedLast: undefined,
+        notification: false,
+        coverLetter: new CoverLetter(),
+      };
+
+      const existingJobEntityTwo: Job = {
+        id: mockJobInfo.indeedId,
+        indeedId: 'lawl',
         applied: false,
         link: '',
         name: '',
@@ -654,7 +662,7 @@ describe('JobService', () => {
         .mockResolvedValueOnce(mockJobTypeEntity);
       const jobRepositoryFindSpy = jest
         .spyOn(jobRepository, 'find')
-        .mockResolvedValueOnce([existingJobEntity]);
+        .mockResolvedValueOnce([existingJobEntity, existingJobEntityTwo]);
       const jobRepositorySaveSpy = jest
         .spyOn(jobRepository, 'save')
         .mockResolvedValueOnce(mockJob);
@@ -665,6 +673,138 @@ describe('JobService', () => {
       // Assert
       expect(jobTypeEntitySpy).toHaveBeenCalled();
       expect(jobRepositoryFindSpy).toHaveBeenCalled();
+      expect(jobRepositorySaveSpy).not.toHaveBeenCalled();
+    });
+
+    it('should push a new jobsType record to the already existing job', async () => {
+      // Arrange
+      const { mockJob } = createFullUserWithDetails();
+      const newUnusedMockJobTypeEntity: JobType = {
+        id: 'rawr',
+        name: '',
+        location: '',
+        user: new User(),
+        jobs: [],
+        date: undefined,
+        active: false,
+        desiredPay: 0,
+        desiredPayUnit: PayUnits.HOURLY,
+        description: '',
+      };
+
+      const mockJobInfo: JobInfoInterface = {
+        indeedId: mockJob.indeedId,
+        jobTypeId: newUnusedMockJobTypeEntity.id,
+        name: mockJob.name,
+        description: mockJob.description,
+        pay: mockJob.pay,
+        location: mockJob.location,
+        companyName: mockJob.companyName,
+      };
+
+      const mockJobInfoSameType = structuredClone(mockJobInfo);
+      mockJobInfoSameType.jobTypeId = 'random';
+      mockJobInfoSameType.indeedId = 'random';
+
+      const jobTypeEntityFindOneSpy = jest
+        .spyOn(jobTypeService, 'findOne')
+        .mockResolvedValueOnce(newUnusedMockJobTypeEntity);
+      const jobsRepositoryFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([mockJob]); // This reps all that match
+
+      const updatedExistingJob = structuredClone(mockJob);
+
+      // Modify the deep copy without affecting the original mockJob
+      updatedExistingJob.jobType.push(newUnusedMockJobTypeEntity);
+
+      const jobRepositorySaveSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce(updatedExistingJob);
+
+      const consoleLogSpy = jest.spyOn(console, 'log');
+
+      // Act
+      const response = await service.addJobsByBot(
+        newUnusedMockJobTypeEntity.id,
+        [mockJobInfo, mockJobInfoSameType],
+      );
+
+      // Assert
+      expect(response).toEqual([updatedExistingJob]);
+      expect(jobRepositorySaveSpy).toHaveBeenCalledWith(updatedExistingJob);
+      expect(jobTypeEntityFindOneSpy).toHaveBeenCalled();
+      expect(jobsRepositoryFindSpy).toHaveBeenCalled();
+      expect(jobRepositorySaveSpy).toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('jobType pushed and updated'),
+      );
+    });
+
+    it('should not add a new jobType to an existing job with the same jobType', async () => {
+      // Arrange
+      const { mockJob, mockJobTypeEntity } = createFullUserWithDetails();
+      const newUnusedMockJobTypeEntity: JobType = {
+        id: 'unusedMockType',
+        name: '',
+        location: '',
+        user: new User(),
+        jobs: [],
+        date: undefined,
+        active: false,
+        desiredPay: 0,
+        desiredPayUnit: PayUnits.HOURLY,
+        description: '',
+      };
+
+      const mockJobInfo: JobInfoInterface = {
+        indeedId: mockJob.indeedId,
+        jobTypeId: mockJob.jobType[0].id,
+        name: mockJob.name,
+        description: mockJob.description,
+        pay: mockJob.pay,
+        location: mockJob.location,
+        companyName: mockJob.companyName,
+      };
+
+      const mockJobInfoDifferentJobType = structuredClone(mockJobInfo);
+      mockJobInfoDifferentJobType.jobTypeId = 'mockJobInfoDifferentJobType';
+
+      const testJobType = new JobType();
+      testJobType.id = newUnusedMockJobTypeEntity.id;
+
+      mockJob.jobType.push(testJobType);
+
+      // const existingJob = structuredClone(mockJob);
+
+      // existingJob.jobType[0].id = mockJobInfo.jobTypeId;
+
+      const jobTypeEntityFindOneSpy = jest
+        .spyOn(jobTypeService, 'findOne')
+        .mockResolvedValueOnce(mockJobTypeEntity);
+      const jobsRepositoryFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([mockJob]); // This reps all that match
+
+      const updatedExistingJob = structuredClone(mockJob);
+      updatedExistingJob.jobType.push(newUnusedMockJobTypeEntity);
+
+      const jobRepositorySaveSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce(updatedExistingJob);
+
+      const consoleSpy = jest.spyOn(console, 'log');
+
+      // Act
+      await service.addJobsByBot(newUnusedMockJobTypeEntity.id, [
+        mockJobInfo,
+        mockJobInfoDifferentJobType,
+      ]);
+
+      // Assert
+      expect(consoleSpy).not.toHaveBeenCalledWith('adding existing job');
+      expect(jobTypeEntityFindOneSpy).toHaveBeenCalled();
+      expect(jobsRepositoryFindSpy).toHaveBeenCalled();
       expect(jobRepositorySaveSpy).not.toHaveBeenCalled();
     });
   });
@@ -851,46 +991,494 @@ describe('JobService', () => {
     });
   });
 
-  describe('findAllCoverLetterToApply', () => {
-    it('should find all users who have cover letters generated though have not applied yet', async () => {
+  describe('checkJobBatches', () => {
+    it('should fire sendDiscordNewJobMessage', async () => {
       // Arrange
-      const { mockUser, mockJob, mockCoverLetter } =
-        createFullUserWithDetails();
+      const mockBatch = createMockJob(true);
+      const processedJob: CompleteJobParse = {
+        indeedId: mockBatch.custom_id,
+        ...JSON.parse(mockBatch.response.body.choices[0].message.content),
+      };
+
+      const checkPendingBatchesSpy = jest
+        .spyOn(batchService, 'checkPendingBatches')
+        .mockResolvedValueOnce([mockBatch]);
+      const processJobObjectSpy = jest
+        .spyOn(service, 'processJobObject')
+        .mockReturnValue(processedJob);
+      const updateFromCompleteJobParsetSpy = jest.spyOn(
+        service,
+        'updateFromCompleteJobParse',
+      );
+      const sendDiscordNewJobMessageSpy = jest.spyOn(
+        service,
+        'sendDiscordNewJobMessage',
+      );
+
+      // Act
+      await service.checkJobBatches();
+
+      // Assert
+      expect(checkPendingBatchesSpy).toHaveBeenCalled();
+      expect(processJobObjectSpy).toHaveBeenCalled();
+      expect(updateFromCompleteJobParsetSpy).toHaveBeenCalled();
+      expect(sendDiscordNewJobMessageSpy).toHaveBeenCalled();
+
+      expect(checkPendingBatchesSpy).toHaveBeenCalledWith(BatchType.JOB);
+      expect(processJobObjectSpy).toHaveBeenCalledWith(mockBatch);
+      expect(updateFromCompleteJobParsetSpy).toHaveBeenCalledWith(processedJob);
+    });
+
+    it('should return if no responses found', async () => {
+      // Arrange
+      const checkPendingBatchesSpy = jest
+        .spyOn(batchService, 'checkPendingBatches')
+        .mockResolvedValueOnce([]);
+
+      const processJobObjectSpy = jest.spyOn(service, 'processJobObject');
+      const updateFromCompleteJobParsetSpy = jest.spyOn(
+        service,
+        'updateFromCompleteJobParse',
+      );
+      const sendDiscordNewJobMessageSpy = jest.spyOn(
+        service,
+        'sendDiscordNewJobMessage',
+      );
+
+      // Act
+      await service.checkJobBatches();
+
+      // Assert
+      expect(checkPendingBatchesSpy).toHaveBeenCalled();
+      expect(processJobObjectSpy).not.toHaveBeenCalled();
+      expect(updateFromCompleteJobParsetSpy).not.toHaveBeenCalled();
+      expect(sendDiscordNewJobMessageSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findOne', () => {
+    it('should fire jobRepository.findOne with the id', async () => {
+      // Arrange
+      const mockJob = createFullUserWithDetails().mockJob;
+
+      const jobRepoFindOneSpy = jest
+        .spyOn(jobRepository, 'findOne')
+        .mockResolvedValueOnce(mockJob);
+
+      // Act
+      const response = await service.findOne(mockJob.id);
+
+      // Assert
+      expect(response).toEqual(mockJob);
+      expect(jobRepoFindOneSpy).toHaveBeenCalled();
+      expect(jobRepoFindOneSpy).toHaveBeenCalledWith({
+        relations: {
+          jobType: true,
+          coverLetter: true,
+        },
+        where: {
+          id: mockJob.id,
+        },
+      });
+    });
+  });
+
+  describe('findAllJobsByUser', () => {
+    it('should return all jobs to send to a user', async () => {
+      // Arrange
+      const { mockJob } = createFullUserWithDetails();
+      mockJob.suited = true;
+      mockJob.notification = false;
+
+      const jobRepoFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([mockJob]);
+
+      // Act
+      const response = await service.findAllUserUnsendJobs(
+        mockJob.jobType[0].user.id,
+      );
+
+      // Assert
+      expect(response).toEqual([mockJob]);
+      expect(jobRepoFindSpy).toHaveBeenCalled();
+      expect(jobRepoFindSpy).toHaveBeenCalledWith({
+        relations: {
+          jobType: {
+            user: true,
+          },
+        },
+        where: {
+          jobType: {
+            user: {
+              id: mockJob.jobType[0].user.id,
+            },
+          },
+          suited: true,
+          notification: false,
+        },
+      });
+    });
+  });
+
+  describe('findAllAppliedJobs', () => {
+    it('should return all jobs that have been applied to', async () => {
+      // Arrange
+      const state = true;
+      const mockJob = createFullUserWithDetails().mockJob;
+      mockJob.applied = state;
+
+      const jobRepoFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([mockJob]);
+
+      // Act
+      const response = await service.findAllAppliedJobs(
+        mockJob.jobType[0].user.id,
+        state,
+      );
+
+      // Assert
+      expect(response).toEqual([mockJob]);
+      expect(jobRepoFindSpy).toHaveBeenCalled();
+      expect(jobRepoFindSpy).toHaveBeenCalledWith({
+        relations: {
+          jobType: {
+            user: true,
+          },
+        },
+        where: {
+          applied: state,
+          jobType: {
+            user: {
+              id: mockJob.jobType[0].user.id,
+            },
+          },
+        },
+      });
+    });
+
+    it('should return all jobs that have not been applied to', async () => {
+      // Arrange
+      const state = false;
+      const mockJob = createFullUserWithDetails().mockJob;
+      mockJob.applied = state;
+
+      const jobRepoFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([mockJob]);
+
+      // Act
+      const response = await service.findAllAppliedJobs(
+        mockJob.jobType[0].user.id,
+        state,
+      );
+
+      // Assert
+      expect(response).toEqual([mockJob]);
+      expect(jobRepoFindSpy).toHaveBeenCalled();
+      expect(jobRepoFindSpy).toHaveBeenCalledWith({
+        relations: {
+          jobType: {
+            user: true,
+          },
+        },
+        where: {
+          applied: state,
+          jobType: {
+            user: {
+              id: mockJob.jobType[0].user.id,
+            },
+          },
+        },
+      });
+    });
+  });
+
+  describe('findAllCoverLetterToApply', () => {
+    it('should return all jobs that have cover letters generated but not applied', async () => {
+      // Arrange
+      const { mockJob, mockCoverLetter } = createFullUserWithDetails();
+
       mockJob.applied = false;
       mockJob.suited = true;
       mockCoverLetter.batch = true;
       mockCoverLetter.generatedCoverLetter = faker.lorem.sentence();
 
-      const mockSelectedMockJob = new Job();
+      const mockSelectJob = {
+        link: mockJob.link,
+        applied: false,
+        coverLetter: {
+          generatedCoverLetter: mockCoverLetter.generatedCoverLetter,
+          userPitch: mockCoverLetter.userPitch,
+        },
+      };
 
-      mockSelectedMockJob.link = mockJob.link;
-      mockSelectedMockJob.applied = false;
+      const unprocessedMockJob = new Job();
+      unprocessedMockJob.link = mockJob.link;
+      unprocessedMockJob.applied = mockJob.applied;
 
-      const mockSelectedCoverLetter = new CoverLetter();
-
-      mockSelectedCoverLetter.generatedCoverLetter =
+      const unprocessedMockCoverLetter = new CoverLetter();
+      unprocessedMockCoverLetter.generatedCoverLetter =
         mockCoverLetter.generatedCoverLetter;
-      mockSelectedCoverLetter.userPitch = mockCoverLetter.userPitch;
+      unprocessedMockCoverLetter.userPitch = mockCoverLetter.userPitch;
 
-      mockSelectedMockJob.coverLetter = mockSelectedCoverLetter;
+      unprocessedMockJob.coverLetter = unprocessedMockCoverLetter;
+
+      unprocessedMockJob.jobType = [mockJob.jobType[0]];
 
       const jobRepoFindSpy = jest
-        .spyOn(service, 'findAllCoverLetterToApply')
-        .mockResolvedValueOnce([mockSelectedMockJob]);
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValue([unprocessedMockJob]);
+
       // Act
-      const response = await service.findAllCoverLetterToApply(mockUser.id);
+      const response = await service.findAllCoverLetterToApply(
+        mockJob.jobType[0].user.id,
+      );
+
       // Assert
-      expect(response).toEqual([
-        {
-          link: mockJob.link,
+      expect(response).toEqual([mockSelectJob]);
+      expect(jobRepoFindSpy).toHaveBeenCalled();
+      expect(jobRepoFindSpy).toHaveBeenCalledWith({
+        where: {
           applied: false,
+          suited: true,
           coverLetter: {
-            generatedCoverLetter: mockCoverLetter.generatedCoverLetter,
-            userPitch: mockCoverLetter.userPitch,
+            batch: true,
+            generatedCoverLetter: Not(IsNull()),
+          },
+          jobType: {
+            user: {
+              id: mockJob.jobType[0].user.id,
+            },
           },
         },
-      ]);
+        relations: {
+          coverLetter: true,
+          jobType: {
+            user: true,
+          },
+        },
+        select: {
+          link: true,
+          applied: true,
+          coverLetter: {
+            generatedCoverLetter: true,
+            userPitch: true,
+          },
+          jobType: false,
+        },
+      });
+    });
+
+    it('should throw an error if no jobs are found', async () => {
+      // Arrange
+      const userId = faker.string.uuid();
+
+      const jobRepoFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValue([]);
+
+      // Act
+      const response = service.findAllCoverLetterToApply(userId);
+
+      // Assert
+      await expect(response).rejects.toThrow('no_cover_letters_ready');
       expect(jobRepoFindSpy).toHaveBeenCalled();
+      expect(jobRepoFindSpy).toHaveBeenCalledWith({
+        where: {
+          applied: false,
+          suited: true,
+          coverLetter: {
+            batch: true,
+            generatedCoverLetter: Not(IsNull()),
+          },
+          jobType: {
+            user: {
+              id: userId,
+            },
+          },
+        },
+        relations: {
+          coverLetter: true,
+          jobType: {
+            user: true,
+          },
+        },
+        select: {
+          link: true,
+          applied: true,
+          coverLetter: {
+            generatedCoverLetter: true,
+            userPitch: true,
+          },
+          jobType: false,
+        },
+      });
+    });
+  });
+
+  describe('sendUserNewJobs', () => {
+    it('send users new jobs', async () => {
+      // Arrange
+      const { mockUser, mockJob } = createFullUserWithDetails();
+
+      mockJob.suited = true;
+      mockJob.notification = false;
+
+      const updatedMockJob = structuredClone(mockJob);
+      updatedMockJob.notification = true;
+
+      const findAllUserUnsendJobsSpy = jest
+        .spyOn(service, 'findAllUserUnsendJobs')
+        .mockResolvedValueOnce([mockJob]);
+      const jobRepositorySaveSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce(updatedMockJob);
+
+      // Act
+      const response = await service.sendUserNewJobs(mockUser.id);
+
+      // Assert
+      expect(response).toEqual([updatedMockJob]);
+      expect(findAllUserUnsendJobsSpy).toHaveBeenCalled();
+      expect(findAllUserUnsendJobsSpy).toHaveBeenCalledWith(mockUser.id);
+      expect(jobRepositorySaveSpy).toHaveBeenCalled();
+      expect(jobRepositorySaveSpy).toHaveBeenCalledWith([updatedMockJob]);
+    });
+  });
+
+  describe('resetFalse', () => {
+    it('should reset all jobs to false for user', async () => {
+      // Arrange
+      const { mockJob } = createFullUserWithDetails();
+      const userId = mockJob.jobType[0].user.id;
+
+      mockJob.suited = false;
+
+      const updatedMockJob = structuredClone(mockJob);
+      updatedMockJob.scannedLast = null;
+
+      const jobRepositoryFindSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([mockJob]);
+      const jobRepositorySaveSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce(updatedMockJob);
+
+      // Act
+      await service.resetFalse(userId);
+
+      // Assert
+      expect(jobRepositoryFindSpy).toHaveBeenCalled();
+      expect(jobRepositoryFindSpy).toHaveBeenCalledWith({
+        relations: {
+          jobType: {
+            user: true,
+          },
+        },
+        where: {
+          jobType: {
+            user: {
+              id: userId,
+            },
+          },
+          suited: false,
+        },
+      });
+      expect(jobRepositorySaveSpy).toHaveBeenCalled();
+      expect(jobRepositorySaveSpy).toHaveBeenCalledWith(updatedMockJob);
+    });
+  });
+
+  describe('updateFromCompleteJobParse', () => {
+    it('should update the job from openai', async () => {
+      // Arrange
+      const { mockJob } = createFullUserWithDetails();
+
+      mockJob.id = faker.string.uuid();
+      mockJob.summary = faker.lorem.paragraphs();
+      mockJob.conciseDescription = faker.lorem.paragraph();
+      mockJob.conciseSuited = faker.lorem.sentence();
+      mockJob.scannedLast = new Date();
+      mockJob.suited = true;
+
+      const jobRepoUpdateSpy = jest
+        .spyOn(jobRepository, 'update')
+        .mockResolvedValueOnce({
+          raw: [],
+          affected: 1,
+          generatedMaps: [mockJob],
+        } as UpdateResult);
+      // Act
+
+      const response = await service.updateFromCompleteJobParse(mockJob);
+
+      // Assert
+      expect(jobRepoUpdateSpy).toHaveBeenCalled();
+      expect(jobRepoUpdateSpy).toHaveBeenCalledWith(
+        { indeedId: mockJob.indeedId },
+        {
+          summary: mockJob.summary,
+          suited: mockJob.suited,
+          conciseDescription: mockJob.conciseDescription,
+          scannedLast: new Date(),
+          conciseSuited: mockJob.conciseSuited,
+        },
+      );
+      expect(response).toEqual({
+        raw: [],
+        affected: 1,
+        generatedMaps: [mockJob],
+      } as UpdateResult);
+    });
+  });
+
+  describe('updateJobApplication', () => {
+    it('should update the job application status', async () => {
+      // Arrange
+      const mockJob = createFullUserWithDetails().mockJob;
+      const userId = mockJob.jobType[0].user.id;
+      const status = true;
+
+      mockJob.applied = false;
+
+      const updatedMockJob = structuredClone(mockJob);
+      updatedMockJob.applied = status;
+
+      const jobRepositoryFindSpy = jest
+        .spyOn(jobRepository, 'findOne')
+        .mockResolvedValueOnce(mockJob);
+
+      const jobRepositorySaveSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce(updatedMockJob);
+      // Act
+      const response = await service.updateJobApplication(
+        userId,
+        mockJob.indeedId,
+        status,
+      );
+      // Assert
+      expect(jobRepositoryFindSpy).toHaveBeenCalled();
+      expect(jobRepositoryFindSpy).toHaveBeenCalledWith({
+        relations: {
+          jobType: {
+            user: true,
+          },
+        },
+        where: {
+          indeedId: mockJob.indeedId,
+          jobType: {
+            user: {
+              id: userId,
+            },
+          },
+        },
+      });
+      expect(jobRepositorySaveSpy).toHaveBeenCalled();
+      expect(jobRepositorySaveSpy).toHaveBeenCalledWith(updatedMockJob);
+      expect(response).toEqual(updatedMockJob);
     });
   });
 });
