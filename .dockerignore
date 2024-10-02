@@ -1,0 +1,6 @@
+.env
+.sentryclirc
+.secrets
+node_modules
+dist
+coverage
