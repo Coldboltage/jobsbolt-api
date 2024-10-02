@@ -60,3 +60,7 @@ reports
 
 # Sentry Config File
 .sentryclirc
+
+# Docker Folder
+/docker/**/postgres-data
+/docker/**/rabbitmq.conf
