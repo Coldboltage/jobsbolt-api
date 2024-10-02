@@ -24,6 +24,9 @@ import { UtilsModule } from './utils/utils.module';
 import { SeederModule } from './seeder/seeder.module';
 import seedConfig from './config/seed/seed.config';
 import { validateSeederEnv } from './config/seed/seed.schema';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
+import { APP_FILTER } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -52,6 +55,7 @@ import { validateSeederEnv } from './config/seed/seed.schema';
         };
       },
     }),
+    SentryModule.forRoot(),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -70,8 +74,15 @@ import { validateSeederEnv } from './config/seed/seed.schema';
     CoverLetterModule,
     UtilsModule,
     SeederModule,
+    PrometheusModule.register(),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+  ],
 })
 export class AppModule { }
