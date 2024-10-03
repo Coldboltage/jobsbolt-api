@@ -44,7 +44,7 @@ services:
       - grafana-storage:/var/lib/grafana
 
   jobsboltapi:
-    image: coldbolt/jobsbolt-api:docker-dev-latest
+    image: coldbolt/jobsbolt-api:dev-test-latest
     container_name: jobsbolt-api
     ports:
       - '3000:3000'

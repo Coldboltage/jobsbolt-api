@@ -57,9 +57,9 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t coldbolt/jobsbolt-api:dev-latest -t coldbolt/jobsbolt-api:${{ steps.branch_name.outputs.branch }}-dev .
+          docker build -t coldbolt/jobsbolt-api:dev-test-latest -t coldbolt/jobsbolt-api:${{ steps.branch_name.outputs.branch }}-dev-test .
 
       - name: Push Docker Image
         run: |
-          docker push coldbolt/jobsbolt-api:dev-latest
-          docker push coldbolt/jobsbolt-api:${{ steps.branch_name.outputs.branch }}-dev
+          docker push coldbolt/jobsbolt-api:dev-test-latest
+          docker push coldbolt/jobsbolt-api:${{ steps.branch_name.outputs.branch }}-dev-test
