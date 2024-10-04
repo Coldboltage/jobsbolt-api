@@ -16,6 +16,8 @@ RUN npm install
 COPY . /jobsbolt-alpine/
 
 # Build
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 RUN npm run build
 
 # Clean up
