@@ -4,29 +4,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  # test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Repository
-  #       uses: actions/checkout@v4
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  #     - name: Setup Node.js v20
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '20'
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  #     - name: Install dependencies
-  #       run: npm install
+      - name: Install dependencies
+        run: npm install
 
-  #     - name: Run Tests
-  #       run: npm run test
+      - name: Run Tests
+        run: npm run test
 
-  #     - name: Run Stryker
-  #       run: npx stryker run
+      - name: Run Stryker
+        run: npx stryker run
 
   dockerBuild:
     runs-on: ubuntu-latest
-    # needs: test
+    needs: test
 
     steps:
       - name: Checkout Repository
