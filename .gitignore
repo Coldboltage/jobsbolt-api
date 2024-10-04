@@ -64,3 +64,4 @@ reports
 # Docker Folder
 /docker/**/postgres-data
 /docker/**/rabbitmq.conf
+/actions-runner
