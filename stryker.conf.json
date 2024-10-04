@@ -12,7 +12,7 @@
     "typescript"
   ],
   "tsconfigFile": "tsconfig.json",
-  "concurrency": 12,
+  "concurrency": 1,
   "reporters": [
     "clear-text",
     "progress"
