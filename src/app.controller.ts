@@ -5,7 +5,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Controller()
 export class AppController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @UseGuards(LocalAuthGuard)
   @Post('auth/login')
@@ -17,5 +17,10 @@ export class AppController {
   @Get('profile')
   async getProfile(@Request() req) {
     return req.user;
+  }
+
+  @Get('/debug-sentry')
+  getError() {
+    throw new Error('My first Sentry error!');
   }
 }

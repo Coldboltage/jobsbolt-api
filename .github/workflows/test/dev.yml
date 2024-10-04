@@ -1,12 +1,7 @@
 name: Dev envioronment CI/CD
 
 on:
-  push:
-    branches:
-      - dev
-  pull_request:
-    branches:
-      - dev
+  workflow_dispatch:
 
 jobs:
   test:
@@ -53,13 +48,13 @@ jobs:
         run: |
           BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
           echo "Branch name is $BRANCH_NAME"
-          echo "::set-output name=branch::${BRANCH_NAME}"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Build Docker Image
         run: |
-          docker build --build-arg SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }} -t coldbolt/jobsbolt-api:dev-latest -t coldbolt/jobsbolt-api:${{ steps.branch_name.outputs.branch }}-dev .
+          docker build -f Dockerfile.test -t coldbolt/jobsbolt-api:dev-test-latest -t coldbolt/jobsbolt-api:${{ env.BRANCH_NAME }}-dev-test .
 
       - name: Push Docker Image
         run: |
-          docker push coldbolt/jobsbolt-api:dev-latest
-          docker push coldbolt/jobsbolt-api:${{ steps.branch_name.outputs.branch }}-dev
+          docker push coldbolt/jobsbolt-api:dev-test-latest
+          docker push coldbolt/jobsbolt-api:${{ env.BRANCH_NAME }}-dev-test

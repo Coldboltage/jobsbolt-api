@@ -57,3 +57,11 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .stryker-tmp
 reports
 .secrets
+
+# Sentry Config File
+.sentryclirc
+
+# Docker Folder
+/docker/**/postgres-data
+/docker/**/rabbitmq.conf
+/actions-runner
