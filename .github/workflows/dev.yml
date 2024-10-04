@@ -51,15 +51,13 @@ jobs:
       - name: Get Branch Name
         id: branch_name
         run: |
-          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-          echo "Branch name is $BRANCH_NAME"
-          echo "::set-output name=branch::${BRANCH_NAME}"
+          echo "BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
 
       - name: Build Docker Image
         run: |
-          docker build --build-arg SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }} -t coldbolt/jobsbolt-api:dev-latest -t coldbolt/jobsbolt-api:${{ steps.branch_name.outputs.branch }}-dev .
+          docker build --build-arg SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }} -t coldbolt/jobsbolt-api:dev-latest -t coldbolt/jobsbolt-api:${{ env.BRANCH_NAME }}-dev .
 
       - name: Push Docker Image
         run: |
           docker push coldbolt/jobsbolt-api:dev-latest
-          docker push coldbolt/jobsbolt-api:${{ steps.branch_name.outputs.branch }}-dev
+          docker push coldbolt/jobsbolt-api:${{ env.BRANCH_NAME }}-dev
