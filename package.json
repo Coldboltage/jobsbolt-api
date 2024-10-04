@@ -6,7 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && npm run sentry:sourcemaps",
+    "build:test": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -18,7 +19,8 @@
     "test:cov": "jest --coverage --config ./package.json",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --config ./package.json",
     "test:e2e": "jest --config ./test/jest-e2e.json --config ./package.json",
-    "seed": "ts-node -r tsconfig-paths/register ./src/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register ./src/seed.ts",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org jobsbolt --project node-nestjs ./dist && sentry-cli sourcemaps upload --org jobsbolt --project node-nestjs ./dist"
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
@@ -35,6 +37,10 @@
     "@nestjs/schedule": "^4.1.0",
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "^10.0.2",
+    "@sentry/cli": "^2.36.5",
+    "@sentry/nestjs": "^8.32.0",
+    "@sentry/profiling-node": "^8.32.0",
+    "@willsoto/nestjs-prometheus": "^6.0.1",
     "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.4",
     "axios": "^1.7.4",
@@ -42,6 +48,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5",
     "form-data": "^4.0.0",
     "mysql2": "^3.11.0",
     "openai": "^4.55.4",
@@ -50,6 +57,7 @@
     "passport-local": "^1.0.0",
     "pdf-parse": "^1.1.1",
     "pg": "^8.12.0",
+    "prom-client": "^15.1.3",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.20",

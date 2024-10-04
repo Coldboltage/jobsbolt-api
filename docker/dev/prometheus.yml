@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 5s  # How often to scrape targets by default.
+
+scrape_configs:
+  - job_name: 'nestjs_app'
+    static_configs:
+      - targets: ['localhost:3000']  # Adjust this target for your NestJS app
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

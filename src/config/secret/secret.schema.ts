@@ -6,6 +6,7 @@ const secretEnvSchema = z.object({
   DISCORD_KEY: z.string(),
   RABBITMQ_USERNAME: z.string(),
   RABBITMQ_PASSWORD: z.string(),
+  SENTRY_DSN: z.string(),
 });
 
 export const validateSecretEnv = (config: Record<string, unknown>) => {
