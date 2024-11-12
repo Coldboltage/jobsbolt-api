@@ -32,11 +32,6 @@ export class JobTypeService implements OnApplicationBootstrap {
     }
   }
 
-  // @Cron('0 */6 * * *')
-  async checkJobCron() {
-    await this.checkNewJobs();
-  }
-
   private readonly logger = new Logger(UserService.name);
 
   async checkNewJobs() {
