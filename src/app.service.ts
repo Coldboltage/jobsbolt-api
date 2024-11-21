@@ -33,5 +33,6 @@ export class AppService implements OnApplicationBootstrap {
         await this.jobService.createBatchJob(); // Run the batch job
       }
     }, 10000); // Check every 10 seconds
+    console.log('fullRun completed');
   }
 }
