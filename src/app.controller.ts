@@ -3,6 +3,9 @@ import { LocalAuthGuard } from './auth/local-auth.guard';
 import { AuthService } from './auth/auth.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AppService } from './app.service';
+import { RolesGuard } from './auth/roles.guard';
+import { Roles } from './auth/roles.decorator';
+import { Role } from './auth/role.enum';
 
 @Controller()
 export class AppController {
@@ -28,6 +31,8 @@ export class AppController {
     throw new Error('My first Sentry error!');
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post('fullrun')
   fullRun() {
     return this.appService.fullRun();
