@@ -98,6 +98,7 @@ export class CoverLetterService {
    *
    * @returns {Promise<void | null>} Returns `null` if no qualifying cover letters are found.
    */
+  @Cron('0 */1 * * *')
   async createBatchCover() {
     const newCovers = await this.findCoverLettersToGenerate();
 
