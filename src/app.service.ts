@@ -17,7 +17,6 @@ export class AppService implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     const fullStartTest = this.configService.get<string>('general.fullTest');
     if (fullStartTest == 'true') await this.fullRun();
-    // await this.jobService.resetFalse('373b0fd3-f744-489d-94a4-e4be66384d05')
   }
 
   getHello(): string {
@@ -34,5 +33,6 @@ export class AppService implements OnApplicationBootstrap {
         await this.jobService.createBatchJob(); // Run the batch job
       }
     }, 10000); // Check every 10 seconds
+    console.log('fullRun completed');
   }
 }

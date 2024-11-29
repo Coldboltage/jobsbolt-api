@@ -395,7 +395,12 @@ describe('JobService', () => {
       // Assert
       expect(scanAvailableJobsSpy).toHaveBeenCalled();
       expect(jobRepositorySaveSpy).toHaveBeenCalled();
-      expect(jobRepositorySaveSpy).toHaveBeenCalledWith([updatedMockJob]);
+      expect(jobRepositorySaveSpy).toHaveBeenCalledWith([
+        expect.objectContaining({
+          ...updatedMockJob,
+          scannedLast: expect.any(Date), // Allow any valid Date object
+        }),
+      ]);
       expect(buildJobJsonSpy).toHaveBeenCalledWith([updatedMockJob], 'job');
       expect(openAISendJSONSpy).toHaveBeenCalled();
       expect(openAISendJSONSpy).toHaveBeenCalledWith('job');

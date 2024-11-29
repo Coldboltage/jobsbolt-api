@@ -25,6 +25,13 @@ export class CoverLetterService {
     private batchService: BatchService,
   ) { }
 
+  /**
+   * Cron job to check for completed cover letter batches every 10 seconds.
+   *
+   * Checks the batch service to see if any cover letter batches are pending.
+   * If a batch is available, retrieves information from the batch JSON provided by OpenAI.
+   * The retrieved information is processed to extract the cover letter and update the cover letter record in the database.
+   */
   @Cron('*/10 * * * * *')
   async checkCoverBatches() {
     // Get all the successfully completed batches
@@ -38,6 +45,12 @@ export class CoverLetterService {
     }
   }
 
+  /**
+   * Processes the cover object from a batch and extracts the cover letter.
+   *
+   * @param {IndividualJobFromBatch} cover - The cover batch information to process.
+   * @returns {CompleteCoverParse} An object containing the cover ID and the extracted cover letter.
+   */
   processCoverObject(cover: IndividualJobFromBatch): CompleteCoverParse {
     const coverId = cover.custom_id;
     const content: ParsedJobContent = JSON.parse(
@@ -53,6 +66,13 @@ export class CoverLetterService {
     return object;
   }
 
+  /**
+   * Creates a new cover letter for a specified job. First Step
+   *
+   * @param {CreateCoverLetterDto} createCoverLetterDto - The DTO containing the data needed to create a cover letter.
+   * @returns {Promise<CoverLetter>} The created cover letter entity.
+   * @throws {ConflictException} If a cover letter already exists for the specified job.
+   */
   async create(createCoverLetterDto: CreateCoverLetterDto) {
     const jobEntity = await this.jobService.findOne(createCoverLetterDto.jobId);
 
@@ -65,6 +85,20 @@ export class CoverLetterService {
     });
   }
 
+  /**
+   * Creates a batch of qualifying cover letters for processing. 2nd Step
+   *
+   * Step prerequisite:
+   * Ensure a cover letter has been created using the `create` method.
+   * The cover letter must meet the following qualifying conditions:
+   * - `generatedCoverLetter` must be null.
+   * - `userPitch` must not be null.
+   * - `batch` must be false.
+   * - The associated job must be marked as `suited` (`job.suited` must be true).
+   *
+   * @returns {Promise<void | null>} Returns `null` if no qualifying cover letters are found.
+   */
+  @Cron('0 */1 * * *')
   async createBatchCover() {
     const newCovers = await this.findCoverLettersToGenerate();
 
@@ -95,6 +129,17 @@ export class CoverLetterService {
     });
   }
 
+  /**
+   * Finds all cover letters that are eligible for batch generation.
+   *
+   * Eligible conditions:
+   * - The `generatedCoverLetter` must be null (cover letter not yet generated).
+   * - The `userPitch` must not be null.
+   * - The cover letter must not already be in a batch (`batch` is false).
+   * - The associated job must be marked as suited (`job.suited` is true).
+   *
+   * @returns {Promise<CoverLetter[]>} A list of qualifying cover letters.
+   */
   async findCoverLettersToGenerate() {
     return this.coverLetterRepository.find({
       relations: {
@@ -127,6 +172,12 @@ export class CoverLetterService {
     return `This action updates a #${id} coverLetter`;
   }
 
+  /**
+   * Updates the cover letter record in the database with the generated cover letter.
+   *
+   * @param {CompleteCoverParse} completeJob - The object containing the cover ID and generated cover letter.
+   * @returns {Promise<UpdateResult>} The result of the update operation.
+   */
   async updateFromCompleteCoverParse(completeJob: CompleteCoverParse) {
     return this.coverLetterRepository.update(
       { id: completeJob.coverId },
