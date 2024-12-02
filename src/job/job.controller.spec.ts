@@ -267,4 +267,18 @@ describe('JobController', () => {
       expect(findAllCoverLetterToApplySpy).toHaveBeenCalled();
     });
   });
+
+  describe('sendDiscordNewJobMessage', () => {
+    it('should send a new job discord message', async () => {
+      // Arrange
+      const sendDiscordNewJobMessageSpy = jest.spyOn(
+        service,
+        'sendDiscordNewJobMessage',
+      );
+      // Act
+      await controller.sendDiscordNewJobMessage();
+      // Assert
+      expect(sendDiscordNewJobMessageSpy).toHaveBeenCalled();
+    })
+  });
 });

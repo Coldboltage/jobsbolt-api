@@ -218,6 +218,27 @@ export class JobController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('new-job-discord-message')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Send discord message to users with new jobs which have not been processed for suitability',
+  })
+  @ApiOkResponse({
+    description: 'Sends Discord messages for newly added jobs.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  sendDiscordNewJobMessage() {
+    return this.jobService.sendDiscordNewJobMessage();
+  }
+
   @Get(':id')
   findOne(@Param('id') indeedId: string) {
     return this.jobService.findOne(indeedId);

@@ -193,7 +193,7 @@ export class JobService implements OnApplicationBootstrap {
     return jobs;
   }
 
-  async sendDiscordNewJobMessage() {
+  async sendDiscordNewJobMessage(): Promise<void> {
     const users = await this.userService.findAllUserUnsendJobs();
     console.log(users);
     for (const user of users) {
