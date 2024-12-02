@@ -106,7 +106,6 @@ export class JobTypeService implements OnApplicationBootstrap {
         },
       },
     });
-    // console.log(allSuitedJobs[0].)
     const allJobs = allSuitedJobs.flatMap((jobType) => {
       return jobType.jobs;
     });
