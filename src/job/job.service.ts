@@ -156,10 +156,12 @@ export class JobService implements OnApplicationBootstrap {
       });
     });
 
+    console.log(`Scrapped Jobs: ${scrappedJobs.length}`);
+    console.log(`New Jobs: ${newJobs.length}`);
+
     // Create all jobs
     for (const job of newJobs) {
       console.log('array for newJobs');
-      console.log(newJobs);
       const jobEntity = await this.jobRepository.save({
         indeedId: job.indeedId,
         link: `https://www.indeed.com/viewjob?jk=${job.indeedId}`,
@@ -174,8 +176,8 @@ export class JobService implements OnApplicationBootstrap {
         companyName: job.companyName,
       });
       console.log(`${jobEntity.indeedId} added`);
-      return;
     }
+    return;
   }
 
   async scanAvailableJobs(): Promise<Job[]> {

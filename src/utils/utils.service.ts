@@ -15,7 +15,15 @@ export class UtilsService {
   constructor(private configService: ConfigService) { }
 
   createJobContentMessage(job: Job) {
-    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType[0].user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType[0].user.description}. The CV helps but the description gives a more recent telling of what the user is thinking.`;
+    const jobTypeDescriptions: string[] = [];
+
+    for (const jobType of job.jobType) {
+      jobTypeDescriptions.push(jobType.description);
+    }
+
+    const allDescriptions = jobTypeDescriptions.join('\n');
+
+    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType[0].user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType[0].user.description}. The CV helps but the description gives a more recent telling of what the user is thinking. The job type description is as follows: ${allDescriptions}. This serves to further refine the search, specifying particular criteria for the type of job being sought.`;
   }
 
   createCoverLetterMessage(coverLetter: CoverLetter) {

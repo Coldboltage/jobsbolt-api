@@ -266,6 +266,10 @@ describe('UtilsService', () => {
       expect(response).toContain(
         `The CV helps but the description gives a more recent telling of what the user is thinking.`,
       );
+      expect(response).toContain(`The job type description is as follows:`);
+      expect(response).toContain(
+        `This serves to further refine the search, specifying particular criteria for the type of job being sought.`,
+      );
     });
   });
 
