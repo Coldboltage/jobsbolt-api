@@ -50,12 +50,12 @@ Goal: The generated cover letter should reflect the user's personal voice and st
       method: 'POST',
       url: '/v1/chat/completions',
       body: {
-        model: 'gpt-4o-2024-08-06',
+        model: 'gpt-4o-2024-11-20',
         messages: [
           {
             role: 'system',
             content:
-              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate. We want to make sure the text is not AI detectable',
+              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate. We want to make sure the text is not AI detectable. It is extremely important to make sure the candidate and their filters which can be idenfied in their initial message is honoured as we wish not to state jobs are suited if the user has no interest in said job via their message',
           },
           { role: 'user', content: this.createJobContentMessage(job) },
         ],
@@ -70,12 +70,12 @@ Goal: The generated cover letter should reflect the user's personal voice and st
                 analysis: {
                   type: 'string',
                   description:
-                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
+                    'The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience and potential for growth. See the user description and jobtype description if provided. It is imperative that the users wishes be met. If they say they could do something, good. If the candidate says they are not interested in something, then we need to honour this. You must be very strict.',
                 },
                 is_suitable: {
                   type: 'boolean',
                   description:
-                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
+                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided. This should be very strict.',
                 },
                 conciseDescription: {
                   type: 'string',
@@ -107,7 +107,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
       method: 'POST',
       url: '/v1/chat/completions',
       body: {
-        model: 'gpt-4o-2024-08-06',
+        model: 'gpt-4o-2024-11-20',
         messages: [
           {
             role: 'system',

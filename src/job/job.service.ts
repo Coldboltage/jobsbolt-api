@@ -147,7 +147,7 @@ export class JobService implements OnApplicationBootstrap {
         );
         returnupdatedExistingJobAndType.push(updatedExistingJobAndType);
       }
-      return returnupdatedExistingJobAndType;
+      // return returnupdatedExistingJobAndType;
     }
 
     const newJobs = scrappedJobs.filter((scrappedJob) => {

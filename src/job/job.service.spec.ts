@@ -204,7 +204,7 @@ describe('JobService', () => {
   //     method: 'POST',
   //     url: '/v1/chat/completions',
   //     body: {
-  //       model: 'gpt-4o-2024-08-06',
+  //       model: 'gpt-4o-2024-11-20',
   //       messages: [
   //         {
   //           role: 'system',
@@ -229,7 +229,7 @@ describe('JobService', () => {
   //               is_suitable: {
   //                 type: 'boolean',
   //                 description:
-  //                   'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
+  //                   'A boolean indicating if the candidate is a good match for the job, based on the analysis provided. This should be very strict.',
   //               },
   //               conciseDescription: {
   //                 type: 'string',
