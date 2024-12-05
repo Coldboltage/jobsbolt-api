@@ -70,12 +70,17 @@ Goal: The generated cover letter should reflect the user's personal voice and st
                 analysis: {
                   type: 'string',
                   description:
-                    'The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience and potential for growth. See the user description and jobtype description if provided. It is imperative that the users wishes be met. If they say they could do something, good. If the candidate says they are not interested in something, then we need to honour this. You must be very strict.',
+                    "The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the users' wishes be met.If they say they could do something, good.If the candidate says they are not interested in something, then we need to honor this.You must be very strict.Weighting system: Core Skills(40%), Experience Level(25%), Candidate Preferences(20%), Potential for Growth(10 %), Cultural Fit and Soft Skills(5%).Use these weights to structure the analysis.",
                 },
                 is_suitable: {
                   type: 'boolean',
                   description:
                     'A boolean indicating if the candidate is a good match for the job, based on the analysis provided. This should be very strict.',
+                },
+                suitabilityScore: {
+                  type: 'number',
+                  description:
+                    'A whole number from 0 to 100 indicating the suitability of the candidate for the job. Higher means more suitable. This should be very strict. The score must be calculated using the weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%).',
                 },
                 conciseDescription: {
                   type: 'string',
@@ -89,6 +94,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
               required: [
                 'analysis',
                 'is_suitable',
+                'suitabilityScore',
                 'conciseDescription',
                 'conciseSuited',
               ],

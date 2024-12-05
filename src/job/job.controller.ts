@@ -189,6 +189,27 @@ export class JobController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Get the first most suitable jobs for a user and send that to the user',
+  })
+  @ApiOkResponse({
+    description:
+      'Discord bot has sent the next five most suitable jobs to said user.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiExpectationFailedResponse({
+    description: 'No cover letter generated for any job.',
+  })
+  sendDiscordNewJobMessageToUser(@Req() req): Promise<void> {
+    return this.jobService.sendDiscordNewJobMessageToUser(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Patch('application-state/:indeedId/:state')
   @ApiBearerAuth()

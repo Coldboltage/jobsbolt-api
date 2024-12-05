@@ -2,7 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JobService } from './job.service';
 import { createMock } from '@golevelup/ts-jest';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { In, IsNull, Not, Repository, UpdateResult } from 'typeorm';
+import {
+  In,
+  IsNull,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+  UpdateResult,
+} from 'typeorm';
 import {
   ChatCompletionMessage,
   CompleteJobParse,
@@ -112,6 +119,7 @@ describe('JobService', () => {
     mockJob.scannedLast = null;
     mockJob.notification = false;
     mockJob.coverLetter = new CoverLetter();
+    mockJob.suitabilityScore = 95;
 
     // Create an instance of JobType
     const mockJobTypeEntity = new JobType();
@@ -160,6 +168,7 @@ describe('JobService', () => {
     return {
       analysis: faker.lorem.sentence(),
       is_suitable: state,
+      suitabilityScore: 95,
       conciseDescription: faker.lorem.sentence(),
       conciseSuited: faker.lorem.sentence(),
     };
@@ -499,6 +508,7 @@ describe('JobService', () => {
         indeedId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: mockContent.is_suitable,
+        suitabilityScore: mockContent.suitabilityScore,
         conciseDescription: mockContent.conciseDescription,
         conciseSuited: mockContent.conciseSuited,
       };
@@ -521,6 +531,7 @@ describe('JobService', () => {
         indeedId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: jobSuitedState,
+        suitabilityScore: mockContent.suitabilityScore,
         conciseDescription: mockContent.conciseDescription,
         conciseSuited: mockContent.conciseSuited,
       };
@@ -558,7 +569,7 @@ describe('JobService', () => {
       const jobRepositorySaveSpy = jest
         .spyOn(jobRepository, 'save')
         .mockResolvedValueOnce(mockJob);
-      const consoleLogSpy = jest.spyOn(console, 'log')
+      const consoleLogSpy = jest.spyOn(console, 'log');
 
       // Act
       await service.addJobsByBot(mockJobTypeEntity.id, [mockJobInfo]);
@@ -639,6 +650,7 @@ describe('JobService', () => {
         scannedLast: undefined,
         notification: false,
         coverLetter: new CoverLetter(),
+        suitabilityScore: 0,
       };
 
       const existingJobEntityTwo: Job = {
@@ -660,6 +672,7 @@ describe('JobService', () => {
         scannedLast: undefined,
         notification: false,
         coverLetter: new CoverLetter(),
+        suitabilityScore: 0,
       };
 
       const jobTypeEntitySpy = jest
@@ -851,6 +864,7 @@ describe('JobService', () => {
       scannedLast: null,
       notification: false,
       coverLetter: new CoverLetter(),
+      suitabilityScore: 95,
     };
     it('should find all jobs available for a scan', async () => {
       // Arrange
@@ -1487,6 +1501,71 @@ describe('JobService', () => {
       expect(jobRepositorySaveSpy).toHaveBeenCalled();
       expect(jobRepositorySaveSpy).toHaveBeenCalledWith(updatedMockJob);
       expect(response).toEqual(updatedMockJob);
+    });
+  });
+
+  describe('findUsersBestFiveJobs', () => {
+    it('find the users best five jobs not sent out yet', async () => {
+      // Arrange
+      const { mockUser } = createFullUserWithDetails();
+      const findJobsSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([
+          new Job(),
+          new Job(),
+          new Job(),
+          new Job(),
+          new Job(),
+        ]);
+
+      // Act
+      const response = await service.findUsersBestFiveJobs(mockUser.id);
+
+      // Assert
+      const allInstances = response.every((job) => job instanceof Job);
+      expect(allInstances).toBe(true);
+      expect(response.length).toBe(5);
+      expect(findJobsSpy).toHaveBeenCalled();
+      expect(findJobsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          order: {
+            suitabilityScore: 'DESC',
+          },
+          take: 5,
+          relations: {
+            jobType: {
+              user: true,
+            },
+          },
+          where: expect.objectContaining({
+            jobType: expect.objectContaining({
+              user: expect.objectContaining({
+                id: mockUser.id,
+              }),
+            }),
+            suitabilityScore: MoreThanOrEqual(85), // Ensure this is the same instance
+            suited: true,
+            notification: false,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('SendDiscordNewJobMessageToUser', () => {
+    it('should send new jobs to a specific user', async () => {
+      // Notes: Specific user presses button and gets the next five jobs best suited to them.
+      // 1) Get the user 2) Get the most suited job for said user 3) send them to user.
+      // Arrange
+      const { mockUser, mockJob } = createFullUserWithDetails();
+      const findUsersBestFiveJobsSpy = jest
+        .spyOn(service, 'findUsersBestFiveJobs')
+        .mockResolvedValueOnce([mockJob]);
+      // Act
+      await service.sendDiscordNewJobMessageToUser(mockUser.id);
+      // Assert
+      expect(findUsersBestFiveJobsSpy).toHaveBeenCalled();
+      expect(findUsersBestFiveJobsSpy).toHaveBeenCalledWith(mockUser.id);
     });
   });
 });

@@ -4,7 +4,14 @@ import {
   OnApplicationBootstrap,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, IsNull, Not, Repository } from 'typeorm';
+import {
+  DeepPartial,
+  In,
+  IsNull,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 import {
   CompleteJobParse,
   IndividualJobFromBatch,
@@ -93,6 +100,7 @@ export class JobService implements OnApplicationBootstrap {
     );
     const summary = content.analysis;
     const suited = content.is_suitable;
+    const suitabilityScore = content.suitabilityScore;
     const conciseDescription = content.conciseDescription;
     const conciseSuited = content.conciseSuited;
 
@@ -100,6 +108,7 @@ export class JobService implements OnApplicationBootstrap {
       indeedId,
       summary,
       suited,
+      suitabilityScore,
       conciseDescription,
       conciseSuited,
     };
@@ -196,12 +205,24 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   async sendDiscordNewJobMessage(): Promise<void> {
-    const users = await this.userService.findAllUserUnsendJobs();
+    const users = await this.userService.findUsersWithUnsendSuitableJobs();
     console.log(users);
     for (const user of users) {
-      const allJobs = await this.sendUserNewJobs(user.id);
-      await this.discordService.sendMessage(user.discordId, allJobs);
+      const allJobs = await this.findUsersBestFiveJobs(user.id);
+      allJobs.forEach((job) => (job.notification = true));
+      await this.jobRepository.save(allJobs);
+      this.discordService.sendMessage(user.discordId, allJobs);
     }
+  }
+
+  async sendDiscordNewJobMessageToUser(userId: string): Promise<void> {
+    const allJobs = await this.findUsersBestFiveJobs(userId);
+    allJobs.forEach((job) => (job.notification = true));
+    await this.jobRepository.save(allJobs);
+    this.discordService.sendMessage(
+      allJobs[0].jobType[0].user.discordId,
+      allJobs,
+    );
   }
 
   async findAll() {
@@ -326,6 +347,30 @@ export class JobService implements OnApplicationBootstrap {
     return allJobsToSend;
   }
 
+  async findUsersBestFiveJobs(userId): Promise<Job[]> {
+    return this.jobRepository.find({
+      order: {
+        suitabilityScore: 'DESC',
+      },
+      take: 5,
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+        suitabilityScore: MoreThanOrEqual(85),
+        suited: true,
+        notification: false,
+      },
+    });
+  }
+
   async resetFalse(userId: string) {
     const allFalseJobs = await this.jobRepository.find({
       relations: {
@@ -354,6 +399,7 @@ export class JobService implements OnApplicationBootstrap {
       {
         summary: completeJob.summary,
         suited: completeJob.suited,
+        suitabilityScore: completeJob.suitabilityScore,
         conciseDescription: completeJob.conciseDescription,
         scannedLast: new Date(),
         conciseSuited: completeJob.conciseSuited,
