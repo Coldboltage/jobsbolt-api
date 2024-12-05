@@ -148,7 +148,7 @@ describe('UtilsService', () => {
                 analysis: {
                   type: 'string',
                   description:
-                    "The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the users' wishes be met.If they say they could do something, good.If the candidate says they are not interested in something, then we need to honor this.You must be very strict.Weighting system: Core Skills(40%), Experience Level(25 %), Candidate Preferences(20 %), Potential for Growth(10 %), Cultural Fit and Soft Skills(5 %).Use these weights to structure the analysis.",
+                    "The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the user's wishes be met. If they say they could do something, good. If the candidate says they are not interested in something, then we need to honor this. You must be very strict. Weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%). Use these weights to structure the analysis.",
                 },
                 is_suitable: {
                   type: 'boolean',
@@ -158,7 +158,7 @@ describe('UtilsService', () => {
                 suitabilityScore: {
                   type: 'number',
                   description:
-                    "A whole number from 0 to 100 indicating the suitability of the candidate for the job. Higher means more suitable. This should be very strict. The score must be calculated using the weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%).",
+                    'A whole number from 0 to 100 indicating the suitability of the candidate for the job. Higher means more suitable. This should be very strict. The score must be calculated using the weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%).',
                 },
                 conciseDescription: {
                   type: 'string',
@@ -438,233 +438,180 @@ describe('UtilsService', () => {
     // });
 
     const { mockJob } = createFullUserWithDetails();
-    const jsonLayout = {
-      custom_id: mockJob.indeedId,
-      method: 'POST',
-      url: '/v1/chat/completions',
-      body: {
-        model: 'gpt-4o-2024-11-20',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
-          },
-          { role: 'user', content: expect.any(String) },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'job_analysis_schema',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                analysis: {
-                  type: 'string',
-                  description:
-                    'The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the users' wishes be met.If they say they could do something, good.If the candidate says they are not interested in something, then we need to honor this.You must be very strict.Weighting system: Core Skills(40%), Experience Level(25 %), Candidate Preferences(20 %), Potential for Growth(10 %), Cultural Fit and Soft Skills(5 %).Use these weights to structure the analysis.',
-},
-  is_suitable: {
-  type: 'boolean',
-  description:
-    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided. This should be very strict.',
-},
-  conciseDescription: {
-  type: 'string',
-  description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
-},
-  conciseSuited: {
-  type: 'string',
-  description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
-},
-              },
-  required: [
-  'analysis',
-  'is_suitable',
-  'conciseDescription',
-  'conciseSuited',
-],
-  additionalProperties: false,
-            },
+    const jsonLayout = createMockJobJsonLayout(mockJob);
+
+    it('Create OpenAI Batch Request', async () => {
+      // Arrange
+      const mockResponse: OpenAI.Files.FileObject = {
+        id: '',
+        bytes: 0,
+        created_at: 0,
+        filename: '',
+        object: 'file',
+        purpose: 'batch',
+        status: 'uploaded',
+      };
+
+      const mockBatch: OpenAI.Batches.Batch = {
+        id: '',
+        completion_window: '24h',
+        created_at: 0,
+        endpoint: '/v1/chat/completions',
+        input_file_id: '',
+        object: 'batch',
+        status: 'completed',
+      };
+
+      // Set up the mock return values
+      mockCreate.mockResolvedValue(mockResponse);
+      mockBatchesCreate.mockResolvedValue(mockBatch);
+
+      // Act
+      const response = await service.openAISendJSON('job');
+
+      // Assert
+      console.log(response);
+      expect(mockCreate).toHaveBeenCalled();
+      expect(mockBatchesCreate).toHaveBeenCalled();
+      await expect(fs.access(filePath)).resolves.not.toThrow();
+    });
+
+    it('should throw an error', async () => {
+      // Arrange
+      try {
+        // Check if the file exists asynchronously
+        await fs.access(filePath); // If file does not exist, this will throw an error
+        await fs.unlink(filePath); // Asynchronously delete the file
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          // Ignore the error if the file doesn't exist
+          throw err;
+        }
+      }
+
+      // Act
+      const response = service.openAISendJSON('job');
+
+      // Assert
+      await expect(response).rejects.toThrow('File not found');
+    });
+  });
+
+  describe('checkStatus', () => {
+    it('should return true if all messages are completed', async () => {
+      // Arrange
+      const userConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('username');
+      const userPasswordConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('password');
+      const consoleSpy = jest.spyOn(console, 'log');
+
+      jest.spyOn(axios, 'get').mockResolvedValueOnce({
+        data: {
+          messages: 0,
+        },
+      });
+
+      // Act
+      const response = await service.checkStatus();
+
+      // Assert
+      expect(response).toEqual(true);
+      expect(userConfigServiceSpy).toHaveBeenCalled();
+      expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalledWith('No more messages');
+    });
+
+    it('should return false if all messages are completed', async () => {
+      // Arrange
+      const userConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('username');
+      const userPasswordConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('password');
+      const consoleSpy = jest.spyOn(console, 'log');
+
+      jest.spyOn(axios, 'get').mockResolvedValueOnce({
+        data: {
+          messages: 1,
+        },
+      });
+
+      // Act
+      const response = await service.checkStatus();
+
+      // Assert
+      expect(response).toEqual(false);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Still a message being processed',
+      );
+    });
+
+    it('should return false if error in axios call', async () => {
+      // Arrange
+      const userConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('username');
+      const userPasswordConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('password');
+
+      jest.spyOn(axios, 'get').mockRejectedValueOnce({
+        response: {
+          status: 401,
+        },
+      });
+
+      // Act
+      const response = await service.checkStatus();
+
+      // Assert
+      expect(response).toEqual(false);
+      expect(userConfigServiceSpy).toHaveBeenCalled();
+      expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
+    });
+
+    it('should return true if implementations are as is', async () => {
+      // Arrange
+      const mockUsername = faker.internet.userName();
+      const mockPassword = faker.internet.password();
+
+      const userConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce(mockUsername);
+      const userPasswordConfigServiceSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce(mockPassword);
+
+      const axiosSpy = jest.spyOn(axios, 'get').mockResolvedValueOnce({
+        data: {
+          messages: 0,
+        },
+      });
+      // Act
+      const response = await service.checkStatus();
+
+      // Assert
+      expect(userConfigServiceSpy).toHaveBeenCalledWith(
+        'secrets.rabbitmq.username',
+      );
+      expect(userPasswordConfigServiceSpy).toHaveBeenCalledWith(
+        'secrets.rabbitmq.password',
+      );
+      expect(axiosSpy).toHaveBeenCalledWith(
+        `http://localhost:15672/api/queues/%2F/jobs_queue`,
+        {
+          auth: {
+            username: mockUsername,
+            password: mockPassword,
           },
         },
-  max_tokens: 1000,
-      },
-    };
-
-it('Create OpenAI Batch Request', async () => {
-  // Arrange
-  const mockResponse: OpenAI.Files.FileObject = {
-    id: '',
-    bytes: 0,
-    created_at: 0,
-    filename: '',
-    object: 'file',
-    purpose: 'batch',
-    status: 'uploaded',
-  };
-
-  const mockBatch: OpenAI.Batches.Batch = {
-    id: '',
-    completion_window: '24h',
-    created_at: 0,
-    endpoint: '/v1/chat/completions',
-    input_file_id: '',
-    object: 'batch',
-    status: 'completed',
-  };
-
-  // Set up the mock return values
-  mockCreate.mockResolvedValue(mockResponse);
-  mockBatchesCreate.mockResolvedValue(mockBatch);
-
-  // Act
-  const response = await service.openAISendJSON('job');
-
-  // Assert
-  console.log(response);
-  expect(mockCreate).toHaveBeenCalled();
-  expect(mockBatchesCreate).toHaveBeenCalled();
-  await expect(fs.access(filePath)).resolves.not.toThrow();
-});
-
-it('should throw an error', async () => {
-  // Arrange
-  try {
-    // Check if the file exists asynchronously
-    await fs.access(filePath); // If file does not exist, this will throw an error
-    await fs.unlink(filePath); // Asynchronously delete the file
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      // Ignore the error if the file doesn't exist
-      throw err;
-    }
-  }
-
-  // Act
-  const response = service.openAISendJSON('job');
-
-  // Assert
-  await expect(response).rejects.toThrow('File not found');
-});
-  });
-
-describe('checkStatus', () => {
-  it('should return true if all messages are completed', async () => {
-    // Arrange
-    const userConfigServiceSpy = jest
-      .spyOn(configService, 'get')
-      .mockReturnValueOnce('username');
-    const userPasswordConfigServiceSpy = jest
-      .spyOn(configService, 'get')
-      .mockReturnValueOnce('password');
-    const consoleSpy = jest.spyOn(console, 'log');
-
-    jest.spyOn(axios, 'get').mockResolvedValueOnce({
-      data: {
-        messages: 0,
-      },
+      );
+      expect(response).toEqual(true);
     });
-
-    // Act
-    const response = await service.checkStatus();
-
-    // Assert
-    expect(response).toEqual(true);
-    expect(userConfigServiceSpy).toHaveBeenCalled();
-    expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith('No more messages');
   });
-
-  it('should return false if all messages are completed', async () => {
-    // Arrange
-    const userConfigServiceSpy = jest
-      .spyOn(configService, 'get')
-      .mockReturnValueOnce('username');
-    const userPasswordConfigServiceSpy = jest
-      .spyOn(configService, 'get')
-      .mockReturnValueOnce('password');
-    const consoleSpy = jest.spyOn(console, 'log');
-
-    jest.spyOn(axios, 'get').mockResolvedValueOnce({
-      data: {
-        messages: 1,
-      },
-    });
-
-    // Act
-    const response = await service.checkStatus();
-
-    // Assert
-    expect(response).toEqual(false);
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Still a message being processed',
-    );
-  });
-
-  it('should return false if error in axios call', async () => {
-    // Arrange
-    const userConfigServiceSpy = jest
-      .spyOn(configService, 'get')
-      .mockReturnValueOnce('username');
-    const userPasswordConfigServiceSpy = jest
-      .spyOn(configService, 'get')
-      .mockReturnValueOnce('password');
-
-    jest.spyOn(axios, 'get').mockRejectedValueOnce({
-      response: {
-        status: 401,
-      },
-    });
-
-    // Act
-    const response = await service.checkStatus();
-
-    // Assert
-    expect(response).toEqual(false);
-    expect(userConfigServiceSpy).toHaveBeenCalled();
-    expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
-  });
-
-  it('should return true if implementations are as is', async () => {
-    // Arrange
-    const mockUsername = faker.internet.userName();
-    const mockPassword = faker.internet.password();
-
-    const userConfigServiceSpy = jest
-      .spyOn(configService, 'get')
-      .mockReturnValueOnce(mockUsername);
-    const userPasswordConfigServiceSpy = jest
-      .spyOn(configService, 'get')
-      .mockReturnValueOnce(mockPassword);
-
-    const axiosSpy = jest.spyOn(axios, 'get').mockResolvedValueOnce({
-      data: {
-        messages: 0,
-      },
-    });
-    // Act
-    const response = await service.checkStatus();
-
-    // Assert
-    expect(userConfigServiceSpy).toHaveBeenCalledWith(
-      'secrets.rabbitmq.username',
-    );
-    expect(userPasswordConfigServiceSpy).toHaveBeenCalledWith(
-      'secrets.rabbitmq.password',
-    );
-    expect(axiosSpy).toHaveBeenCalledWith(
-      `http://localhost:15672/api/queues/%2F/jobs_queue`,
-      {
-        auth: {
-          username: mockUsername,
-          password: mockPassword,
-        },
-      },
-    );
-    expect(response).toEqual(true);
-  });
-});
 });

@@ -3,7 +3,7 @@ import { UserService } from './user.service';
 import { createMock } from '@golevelup/ts-jest';
 import { User } from './entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
 import { JobType } from '../job-type/entities/job-type.entity';
@@ -108,18 +108,38 @@ describe('UserService', () => {
       // Note: This should look for a list of users which have jobs that are suitable for them and have not been notified of them yet
 
       // Arrange
-      const { mockUser, mockJobType, mockJob } = createFullUserWithDetails();
+      const { mockUser } = createFullUserWithDetails();
 
       const findUsersSpy = jest
         .spyOn(userRepository, 'find')
         .mockResolvedValueOnce([mockUser]);
 
       // Act
-      const response = service.findUsersWithUnsendSuitableJobs();
+      const response = await service.findUsersWithUnsendSuitableJobs();
 
       // Assert
       expect(response).toEqual([mockUser]);
-      expect([response[0]]).toEqual(mockUser)
+      expect([response[0]]).toEqual([mockUser]);
+      expect(findUsersSpy).toHaveBeenCalled();
+      expect(findUsersSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: {
+            jobType: {
+              jobs: true,
+            },
+          },
+          where: {
+            jobType: expect.objectContaining({
+              active: true,
+              jobs: expect.objectContaining({
+                suitabilityScore: MoreThanOrEqual(85),
+                suited: true,
+                notification: false,
+              }),
+            }),
+          },
+        }),
+      );
     });
   });
 });

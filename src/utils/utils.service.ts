@@ -70,7 +70,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
                 analysis: {
                   type: 'string',
                   description:
-                    "The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the users' wishes be met.If they say they could do something, good.If the candidate says they are not interested in something, then we need to honor this.You must be very strict.Weighting system: Core Skills(40%), Experience Level(25%), Candidate Preferences(20%), Potential for Growth(10 %), Cultural Fit and Soft Skills(5%).Use these weights to structure the analysis.",
+                    "The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the user's wishes be met. If they say they could do something, good. If the candidate says they are not interested in something, then we need to honor this. You must be very strict. Weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%). Use these weights to structure the analysis.",
                 },
                 is_suitable: {
                   type: 'boolean',

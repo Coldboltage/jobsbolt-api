@@ -116,7 +116,10 @@ export class JobService implements OnApplicationBootstrap {
     return object;
   }
 
-  async addJobsByBot(jobTypeId: string, scrappedJobs: JobInfoInterface[]) {
+  async addJobsByBot(
+    jobTypeId: string,
+    scrappedJobs: JobInfoInterface[],
+  ): Promise<void> {
     // // All jobs rekate to a jobType
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
     // Check which jobs exist already
@@ -184,6 +187,7 @@ export class JobService implements OnApplicationBootstrap {
         scannedLast: null,
         companyName: job.companyName,
       });
+      console.log(jobEntity);
       console.log(`${jobEntity.indeedId} added`);
     }
     return;
