@@ -11,7 +11,7 @@ import { UserService } from '../user/user.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JobType } from './entities/job-type.entity';
 import { Repository } from 'typeorm';
-import { User } from '../user/entities/user.entity';
+import { SlimUser, User } from '../user/entities/user.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 
@@ -68,10 +68,11 @@ export class JobTypeService implements OnApplicationBootstrap {
 
   async create(
     createJobTypeDto: CreateJobTypeDto,
+    user: SlimUser,
     userEntity?: User,
   ): Promise<JobType> {
     if (!userEntity) {
-      userEntity = await this.userService.findOne(createJobTypeDto.userId);
+      userEntity = await this.userService.findOne(user.id);
     }
     const jobTypeEntity = this.jobTypeRepository.create({
       ...createJobTypeDto,
@@ -105,7 +106,6 @@ export class JobTypeService implements OnApplicationBootstrap {
         },
       },
     });
-    // console.log(allSuitedJobs[0].)
     const allJobs = allSuitedJobs.flatMap((jobType) => {
       return jobType.jobs;
     });

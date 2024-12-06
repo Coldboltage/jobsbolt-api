@@ -194,6 +194,7 @@ describe('CoverLetterService', () => {
         jobType: [],
         scannedLast: undefined,
         notification: false,
+        suitabilityScore: 95,
       };
 
       const findOne = jest
@@ -236,6 +237,7 @@ describe('CoverLetterService', () => {
         jobType: [],
         scannedLast: undefined,
         notification: false,
+        suitabilityScore: 95,
       };
 
       const findOne = jest

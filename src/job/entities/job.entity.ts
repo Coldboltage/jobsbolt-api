@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { JobType } from '../../job-type/entities/job-type.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
@@ -66,6 +73,10 @@ export class Job {
   @Column('boolean', { default: false })
   @ApiProperty()
   suited: boolean;
+
+  @Column({ default: null, nullable: true })
+  @ApiProperty()
+  suitabilityScore: number;
 
   @ManyToMany(() => JobType, (jobType) => jobType.jobs)
   @ApiProperty({ type: () => JobType })
@@ -149,6 +160,7 @@ export interface CompleteJobParse {
   indeedId: string;
   summary: string;
   suited: boolean;
+  suitabilityScore: number;
   conciseDescription: string;
   conciseSuited: string;
 }
@@ -156,6 +168,7 @@ export interface CompleteJobParse {
 export interface ParsedJobContent {
   analysis: string;
   is_suitable: boolean;
+  suitabilityScore: number;
   conciseDescription: string;
   conciseSuited: string;
 }
@@ -189,6 +202,7 @@ export interface JobJson {
           properties: {
             analysis: { type: string; description: string };
             is_suitable: { type: string; description: string };
+            suitabilityScore: { type: string; description: string };
             conciseDescription: { type: string; description: string };
             conciseSuited: { type: string; description: string };
           };

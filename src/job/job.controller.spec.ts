@@ -267,4 +267,40 @@ describe('JobController', () => {
       expect(findAllCoverLetterToApplySpy).toHaveBeenCalled();
     });
   });
+
+  describe('sendDiscordNewJobMessage', () => {
+    it('should send a new job discord message', async () => {
+      // Arrange
+      const sendDiscordNewJobMessageSpy = jest.spyOn(
+        service,
+        'sendDiscordNewJobMessage',
+      );
+      // Act
+      await controller.sendDiscordNewJobMessage();
+      // Assert
+      expect(sendDiscordNewJobMessageSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('sendDiscordNewJobMessageToUser', () => {
+    it('should fire the SendDiscordNewJobMessageToUser', async () => {
+      // Arrange
+      const mockReq = {
+        user: {
+          id: faker.string.uuid(),
+        },
+      };
+      const sendDiscordNewJobMessageToUserSerivceSpy = jest.spyOn(
+        service,
+        'sendDiscordNewJobMessageToUser',
+      );
+      // Act
+      await controller.sendDiscordNewJobMessageToUser(mockReq);
+      // Assert
+      expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalled();
+      expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalledWith(
+        mockReq.user.id,
+      );
+    });
+  });
 });
