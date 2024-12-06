@@ -16,10 +16,14 @@ import {
   CoverLetter,
 } from './entities/cover-letter.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
+import { DeepPartial, In, IsNull, Not, Repository } from 'typeorm';
 import { JobService } from '../job/job.service';
 import { UtilsService } from '../utils/utils.service';
 import OpenAI from 'openai';
+import { Role } from '../auth/role.enum';
+import { JobType } from '../job-type/entities/job-type.entity';
+import { PayUnits } from '../job-type/types';
+import { User } from '../user/entities/user.entity';
 
 describe('CoverLetterService', () => {
   let service: CoverLetterService;
@@ -49,6 +53,73 @@ describe('CoverLetterService', () => {
       getRepositoryToken(CoverLetter),
     );
   });
+
+  const createFullUserWithDetails = () => {
+    const mockindeedId = '123';
+    // Create an instance of Job
+    const mockJob = new Job();
+    mockJob.id = faker.string.uuid();
+    mockJob.indeedId = mockindeedId;
+    mockJob.applied = false;
+    mockJob.link = `https://www.indeed.com/viewjob?jk=${mockindeedId}`;
+    mockJob.name = faker.person.jobTitle();
+    mockJob.companyName = faker.company.name();
+    mockJob.date = new Date();
+    mockJob.description = faker.person.jobDescriptor();
+    mockJob.pay = String(faker.helpers.rangeToNumber({ min: 15, max: 100 }));
+    mockJob.location = faker.location.city();
+    mockJob.summary = null;
+    mockJob.conciseDescription = null;
+    mockJob.conciseSuited = null;
+    mockJob.suited = false;
+    mockJob.jobType = null;
+    mockJob.scannedLast = null;
+    mockJob.notification = false;
+    mockJob.coverLetter = new CoverLetter();
+    mockJob.suitabilityScore = 95;
+
+    // Create an instance of JobType
+    const mockJobTypeEntity = new JobType();
+    mockJobTypeEntity.id = faker.string.uuid();
+    mockJobTypeEntity.name = faker.person.jobTitle();
+    mockJobTypeEntity.location = faker.location.city();
+    mockJobTypeEntity.user = null;
+    mockJobTypeEntity.jobs = [mockJob];
+    mockJobTypeEntity.date = undefined;
+    mockJobTypeEntity.active = false;
+    mockJobTypeEntity.desiredPay = 0;
+    mockJobTypeEntity.desiredPayUnit = PayUnits.MONTHLY;
+    mockJobTypeEntity.description = '';
+
+    // Create an instance of User
+    const mockUser = new User();
+    mockUser.id = faker.string.uuid();
+    mockUser.name = faker.person.fullName();
+    mockUser.email = faker.internet.email();
+    mockUser.password = faker.internet.password();
+    mockUser.date = new Date();
+    mockUser.cv = faker.lorem.lines();
+    mockUser.discordId = faker.internet.userName();
+    mockUser.description = faker.lorem.lines();
+    mockUser.roles = [Role.USER];
+    mockUser.jobType = [mockJobTypeEntity];
+    mockUser.baseCoverLetter = faker.lorem.paragraph();
+    mockUser.userTalk = faker.lorem.paragraph();
+
+    // Create an instance of CoverLetter
+    const mockCoverLetter = new CoverLetter();
+    mockCoverLetter.id = faker.string.uuid();
+    mockCoverLetter.userPitch = faker.lorem.paragraph();
+    mockCoverLetter.generatedCoverLetter = faker.lorem.paragraph();
+    mockCoverLetter.batch = false;
+    mockCoverLetter.job = mockJob;
+
+    // Set relationships
+    mockJob.jobType = [mockJobTypeEntity];
+    mockJobTypeEntity.user = mockUser;
+    mockJob.coverLetter = mockCoverLetter;
+    return { mockUser, mockJobTypeEntity, mockJob, mockCoverLetter };
+  };
 
   it('should be defined', () => {
     expect(service).toBeDefined();
@@ -367,6 +438,53 @@ describe('CoverLetterService', () => {
         { id: completeCoverParse.coverId },
         { generatedCoverLetter: completeCoverParse.cover_letter },
       );
-    })
-  })
+    });
+  });
+
+  describe('resetCv', () => {
+    it('should reset the cv', async () => {
+      // Arrange
+      const { mockCoverLetter, mockUser } = createFullUserWithDetails();
+
+      const resetCoverLetter: DeepPartial<CoverLetter> =
+        structuredClone(mockCoverLetter);
+
+      resetCoverLetter.generatedCoverLetter = null;
+      resetCoverLetter.batch = false;
+
+      const resetCoverLetterSpy = jest
+        .spyOn(coverLetterRepository, 'find')
+        .mockResolvedValueOnce([mockCoverLetter]);
+
+      const resetAndSaveCoverLetterSpy = jest
+        .spyOn(coverLetterRepository, 'save')
+        .mockResolvedValue([resetCoverLetter] as any);
+      // Act
+
+      const response = await service.resetCvs(mockUser.id, [
+        mockCoverLetter.id,
+      ]);
+
+      // Assert
+      expect(resetCoverLetterSpy).toHaveBeenCalled();
+      expect(resetAndSaveCoverLetterSpy).toHaveBeenCalled();
+      expect(response).toEqual([resetCoverLetter]);
+      expect(resetCoverLetterSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            job: {
+              jobType: {
+                user: {
+                  id: mockUser.id,
+                },
+              },
+            },
+            id: In([mockCoverLetter.id]),
+            generatedCoverLetter: Not(IsNull()),
+            batch: true,
+          },
+        }),
+      );
+    });
+  });
 });
