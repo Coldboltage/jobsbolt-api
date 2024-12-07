@@ -70,5 +70,9 @@ export const createFullUserWithDetails = () => {
   mockJob.jobType = [mockJobTypeEntity];
   mockJobTypeEntity.user = mockUser;
   mockJob.coverLetter = mockCoverLetter;
-  return { mockUser, mockJobTypeEntity, mockJob, mockCoverLetter };
+
+  const reqMock = {
+    user: mockUser,
+  };
+  return { mockUser, mockJobTypeEntity, mockJob, mockCoverLetter, reqMock };
 };

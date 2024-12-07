@@ -375,8 +375,66 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
-  async findAllInterestedJobsByUser() {
+  async jobInterestState(userId, jobId, interestedState): Promise<Job> {
+    const jobEntity = await this.jobRepository.findOne({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+        id: jobId,
+      },
+    });
+    jobEntity.interested = interestedState;
+    return this.jobRepository.save(jobEntity);
+  }
 
+  async findAllJobsNotifiedPendingInterest(userId: string): Promise<Job[]> {
+    return this.jobRepository.find({
+      where: {
+        notification: true,
+        suited: true,
+        interested: IsNull(),
+        applied: false,
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+    });
+  }
+
+  async findAllInterestedJobsByUser(userId: string): Promise<Job[]> {
+    return this.jobRepository.find({
+      where: {
+        notification: true,
+        suited: true,
+        interested: true,
+        applied: false,
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+    });
   }
 
   async resetFalse(userId: string) {
