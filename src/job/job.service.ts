@@ -375,6 +375,10 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
+  async findAllInterestedJobsByUser() {
+
+  }
+
   async resetFalse(userId: string) {
     const allFalseJobs = await this.jobRepository.find({
       relations: {
