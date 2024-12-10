@@ -68,8 +68,6 @@ export class Job {
   @JoinColumn()
   coverLetter: CoverLetter;
 
-  // Management
-
   @Column('boolean', { default: false })
   @ApiProperty()
   suited: boolean;
@@ -89,6 +87,10 @@ export class Job {
   @Column({ default: false })
   @ApiProperty()
   notification: boolean;
+
+  @Column({ nullable: true })
+  @ApiProperty()
+  interested: boolean;
 }
 
 export class JobInfoInterface {

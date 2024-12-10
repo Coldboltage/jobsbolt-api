@@ -35,7 +35,7 @@ describe('CoverLetterController', () => {
   });
 
   describe('resetCv', () => {
-    it.only('should fire the resetCv service', async () => {
+    it('should fire the resetCv service', async () => {
       // Arrange
       const { mockCoverLetter } = createFullUserWithDetails();
 

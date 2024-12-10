@@ -236,8 +236,10 @@ export class JobService implements OnApplicationBootstrap {
   async findOne(jobId: string) {
     return this.jobRepository.findOne({
       relations: {
-        jobType: true,
         coverLetter: true,
+        jobType: {
+          user: true,
+        }
       },
       where: {
         id: jobId,
@@ -329,6 +331,7 @@ export class JobService implements OnApplicationBootstrap {
         coverLetter: {
           generatedCoverLetter: true,
           userPitch: true,
+          id: true,
         },
         jobType: false,
       },
@@ -371,6 +374,77 @@ export class JobService implements OnApplicationBootstrap {
         suitabilityScore: MoreThanOrEqual(85),
         suited: true,
         notification: false,
+      },
+    });
+  }
+
+  async jobInterestState(userId, jobId, interestedState): Promise<Job> {
+    const jobEntity = await this.jobRepository.findOne({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+        id: jobId,
+      },
+    });
+    jobEntity.interested = interestedState;
+    return this.jobRepository.save(jobEntity);
+  }
+
+  async findAllJobsNotifiedPendingInterest(userId: string): Promise<Job[]> {
+    return this.jobRepository.find({
+      where: {
+        notification: true,
+        suited: true,
+        interested: IsNull(),
+        applied: false,
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+        coverLetter: {
+          generatedCoverLetter: null,
+        },
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+        coverLetter: true,
+      },
+    });
+  }
+
+  async findAllInterestedJobsByUser(userId: string): Promise<Job[]> {
+    return this.jobRepository.find({
+      where: {
+        notification: true,
+        suited: true,
+        interested: true,
+        applied: false,
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+        coverLetter: {
+          generatedCoverLetter: IsNull(),
+          userPitch: IsNull(),
+        },
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+        coverLetter: true,
       },
     });
   }

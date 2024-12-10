@@ -79,6 +79,12 @@ export class CoverLetterService {
     if (jobEntity.coverLetter !== null)
       throw new ConflictException('cover_letter_already_exists');
 
+    await this.jobService.jobInterestState(
+      jobEntity.jobType[0].user.id,
+      jobEntity.id,
+      true,
+    );
+
     return this.coverLetterRepository.save({
       userPitch: createCoverLetterDto.userPitch,
       job: jobEntity,

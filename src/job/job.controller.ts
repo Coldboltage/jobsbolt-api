@@ -206,7 +206,7 @@ export class JobController {
     description: 'No cover letter generated for any job.',
   })
   sendDiscordNewJobMessageToUser(@Req() req): Promise<void> {
-    return this.jobService.sendDiscordNewJobMessageToUser(req.user.id);
+    return this.jobService.sendDiscordNewJobMessageToUser(req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -240,6 +240,21 @@ export class JobController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @Patch('change-interested/:jobId/:state')
+  jobInterestState(
+    @Req() req,
+    @Param('jobId') jobId: string,
+    @Param('state', ParseBoolPipe) interestedState: boolean,
+  ) {
+    return this.jobService.jobInterestState(
+      req.user.userId,
+      jobId,
+      interestedState,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Post('new-job-discord-message')
   @ApiBearerAuth()
@@ -258,6 +273,20 @@ export class JobController {
   })
   sendDiscordNewJobMessage() {
     return this.jobService.sendDiscordNewJobMessage();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @Get('pending-interested')
+  findAllJobsNotifiedPendingInterest(@Req() req) {
+    return this.jobService.findAllJobsNotifiedPendingInterest(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @Get('interested-jobs')
+  findAllInterestedJobsByUser(@Req() req) {
+    return this.jobService.findAllInterestedJobsByUser(req.user.userId);
   }
 
   @Get(':id')

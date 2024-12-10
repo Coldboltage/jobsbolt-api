@@ -287,7 +287,7 @@ describe('JobController', () => {
       // Arrange
       const mockReq = {
         user: {
-          id: faker.string.uuid(),
+          userId: faker.string.uuid(),
         },
       };
       const sendDiscordNewJobMessageToUserSerivceSpy = jest.spyOn(
@@ -299,8 +299,81 @@ describe('JobController', () => {
       // Assert
       expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalled();
       expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalledWith(
-        mockReq.user.id,
+        mockReq.user.userId,
       );
+    });
+  });
+
+  describe('findAllJobsNotifiedPendingInterest', () => {
+    it('should fire the findAllJobsNotifiedPendingInterest service', async () => {
+      // Arrange
+      const reqMock = {
+        user: {
+          userId: faker.string.uuid(),
+        },
+      };
+
+      const findAllJobsNotifiedPendingInterestSpy = jest.spyOn(
+        service,
+        'findAllJobsNotifiedPendingInterest',
+      );
+
+      // Act
+      await controller.findAllJobsNotifiedPendingInterest(reqMock);
+      // Assert
+
+      expect(findAllJobsNotifiedPendingInterestSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('jobInterestState', () => {
+    it('should fire jobInterestState service', async () => {
+      // Arrange
+      const reqMock = {
+        user: {
+          userId: faker.string.uuid(),
+        },
+      };
+
+      const mockJobId = faker.string.uuid();
+      const mockInterestedState = true;
+
+      const jobInterestStateSpy = jest
+        .spyOn(service, 'jobInterestState')
+        .mockResolvedValueOnce(new Job());
+
+      // Act
+      const response = await controller.jobInterestState(
+        reqMock,
+        mockJobId,
+        mockInterestedState,
+      );
+
+      // Assert
+      expect(jobInterestStateSpy).toHaveBeenCalled();
+      expect(response instanceof Job).toEqual(true);
+    });
+  });
+
+  describe('findAllInterestedJobsByUser', () => {
+    it('should fire the findAllInterestedJobsByUser service', async () => {
+      // Arrange
+      const reqMock = {
+        user: {
+          userId: faker.string.uuid(),
+        },
+      };
+
+      const findAllInterestedJobsByUserSpy = jest.spyOn(
+        service,
+        'findAllInterestedJobsByUser',
+      );
+
+      // Act
+      await controller.findAllInterestedJobsByUser(reqMock);
+      // Assert
+
+      expect(findAllInterestedJobsByUserSpy).toHaveBeenCalled();
     });
   });
 });

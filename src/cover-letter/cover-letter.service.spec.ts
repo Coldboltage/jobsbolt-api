@@ -246,31 +246,20 @@ describe('CoverLetterService', () => {
         userPitch: faker.lorem.paragraph(),
       };
 
-      const jobEntity: Job = {
-        id: '',
-        indeedId: '',
-        applied: false,
-        link: '',
-        name: '',
-        companyName: '',
-        date: undefined,
-        description: '',
-        pay: '',
-        location: '',
-        summary: '',
-        conciseDescription: '',
-        conciseSuited: '',
-        coverLetter: null,
-        suited: false,
-        jobType: [],
-        scannedLast: undefined,
-        notification: false,
-        suitabilityScore: 95,
-      };
+      const { mockJob } = createFullUserWithDetails();
+
+      mockJob.coverLetter = null;
+
+      const updatedJobEntity = structuredClone(mockJob);
+      updatedJobEntity.interested = true;
 
       const findOne = jest
         .spyOn(jobService, 'findOne')
-        .mockResolvedValueOnce(jobEntity);
+        .mockResolvedValueOnce(mockJob);
+
+      const interestedStateSpy = jest
+        .spyOn(jobService, 'jobInterestState')
+        .mockResolvedValueOnce(updatedJobEntity);
 
       const save = jest.spyOn(coverLetterRepository, 'save');
 
@@ -280,6 +269,7 @@ describe('CoverLetterService', () => {
       // Assert
       expect(findOne).toHaveBeenCalledWith(createCoverLetterDto.jobId);
       expect(save).toHaveBeenCalled();
+      expect(interestedStateSpy).toHaveBeenCalled();
     });
 
     it('should throw conflict exception if cover letter already exists', async () => {
@@ -309,6 +299,7 @@ describe('CoverLetterService', () => {
         scannedLast: undefined,
         notification: false,
         suitabilityScore: 95,
+        interested: null,
       };
 
       const findOne = jest
