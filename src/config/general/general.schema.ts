@@ -7,6 +7,7 @@ const generalEnvSchema = z.object({
   FIND_JOB: z.enum(['true', 'false']),
   DISCORD_TEST: z.enum(['true', 'false']),
   FULL_TEST: z.enum(['true', 'false']),
+  API_URL: z.string(),
 });
 
 export type GeneralConfig = z.infer<typeof generalEnvSchema>;
