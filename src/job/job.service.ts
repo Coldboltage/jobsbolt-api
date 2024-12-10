@@ -236,8 +236,10 @@ export class JobService implements OnApplicationBootstrap {
   async findOne(jobId: string) {
     return this.jobRepository.findOne({
       relations: {
-        jobType: true,
         coverLetter: true,
+        jobType: {
+          user: true,
+        }
       },
       where: {
         id: jobId,
