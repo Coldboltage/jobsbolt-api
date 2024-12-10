@@ -329,6 +329,7 @@ export class JobService implements OnApplicationBootstrap {
         coverLetter: {
           generatedCoverLetter: true,
           userPitch: true,
+          id: true,
         },
         jobType: false,
       },
@@ -407,11 +408,15 @@ export class JobService implements OnApplicationBootstrap {
             id: userId,
           },
         },
+        coverLetter: {
+          generatedCoverLetter: null,
+        },
       },
       relations: {
         jobType: {
           user: true,
         },
+        coverLetter: true,
       },
     });
   }
@@ -428,11 +433,16 @@ export class JobService implements OnApplicationBootstrap {
             id: userId,
           },
         },
+        coverLetter: {
+          generatedCoverLetter: IsNull(),
+          userPitch: IsNull(),
+        },
       },
       relations: {
         jobType: {
           user: true,
         },
+        coverLetter: true,
       },
     });
   }

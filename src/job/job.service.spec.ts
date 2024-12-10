@@ -1613,11 +1613,15 @@ describe('JobService', () => {
                 id: reqMock.user.id,
               },
             },
+            coverLetter: {
+              generatedCoverLetter: null,
+            },
           },
           relations: {
             jobType: {
               user: true,
             },
+            coverLetter: true,
           },
         }),
       );
@@ -1696,11 +1700,16 @@ describe('JobService', () => {
                 id: reqMock.user.id,
               },
             },
+            coverLetter: {
+              generatedCoverLetter: IsNull(),
+              userPitch: IsNull(),
+            },
           },
           relations: {
             jobType: {
               user: true,
             },
+            coverLetter: true,
           },
         }),
       );
