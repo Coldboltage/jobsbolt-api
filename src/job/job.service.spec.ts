@@ -1457,7 +1457,7 @@ describe('JobService', () => {
           suited: mockJob.suited,
           suitabilityScore: mockJob.suitabilityScore,
           conciseDescription: mockJob.conciseDescription,
-          scannedLast: new Date(),
+          scannedLast: expect.any(Date),
           conciseSuited: mockJob.conciseSuited,
         },
       );
