@@ -287,7 +287,7 @@ describe('JobController', () => {
       // Arrange
       const mockReq = {
         user: {
-          id: faker.string.uuid(),
+          userId: faker.string.uuid(),
         },
       };
       const sendDiscordNewJobMessageToUserSerivceSpy = jest.spyOn(
@@ -299,7 +299,7 @@ describe('JobController', () => {
       // Assert
       expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalled();
       expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalledWith(
-        mockReq.user.id,
+        mockReq.user.userId,
       );
     });
   });

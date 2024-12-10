@@ -1103,7 +1103,9 @@ describe('JobService', () => {
       expect(jobRepoFindOneSpy).toHaveBeenCalled();
       expect(jobRepoFindOneSpy).toHaveBeenCalledWith({
         relations: {
-          jobType: true,
+          jobType: {
+            user: true,
+          },
           coverLetter: true,
         },
         where: {
@@ -1295,6 +1297,7 @@ describe('JobService', () => {
           coverLetter: {
             generatedCoverLetter: true,
             userPitch: true,
+            id: true,
           },
           jobType: false,
         },
@@ -1341,6 +1344,7 @@ describe('JobService', () => {
           coverLetter: {
             generatedCoverLetter: true,
             userPitch: true,
+            id: true,
           },
           jobType: false,
         },
