@@ -8,5 +8,6 @@ export default registerAs('general', () => {
     discordTest: process.env.DISCORD_TEST,
     fullTest: process.env.FULL_TEST,
     apiUrl: process.env.API_LOCAL,
+    rabbitmqUrl: process.env.RABBITMQ_URL,
   };
 });

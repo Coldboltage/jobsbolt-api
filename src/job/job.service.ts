@@ -215,7 +215,9 @@ export class JobService implements OnApplicationBootstrap {
       const allJobs = await this.findUsersBestFiveJobs(user.id);
       allJobs.forEach((job) => (job.notification = true));
       await this.jobRepository.save(allJobs);
-      this.discordService.sendMessage(user.discordId, allJobs);
+      if (user.discordId) {
+        this.discordService.sendMessage(user.discordId, allJobs);
+      }
     }
   }
 
@@ -223,6 +225,7 @@ export class JobService implements OnApplicationBootstrap {
     const allJobs = await this.findUsersBestFiveJobs(userId);
     allJobs.forEach((job) => (job.notification = true));
     await this.jobRepository.save(allJobs);
+    if (allJobs.length === 0 || !allJobs[0].jobType[0].user.discordId) return;
     this.discordService.sendMessage(
       allJobs[0].jobType[0].user.discordId,
       allJobs,

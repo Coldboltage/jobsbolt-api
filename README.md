@@ -82,3 +82,5 @@ This guide outlines the steps to quickly set up and use the infrastructure in Vi
 ---
 
 You’re all set! If you encounter any issues, revisit the steps or consult additional documentation for troubleshooting.
+
+[![](https://mermaid.ink/img/pako:eNpFkN1qwzAMhV9F6Lpl92EMuqWwXZRlTcZgcS_URktCazv4Z6w0ffcpTbIZZJ8jPsmyL3iwFWOCtaOugSJVBmS9e3blsMEdrH8CO0MnyM8-sN7B_XL5AKvspZTYjXxmfagd-3IWkD7-gyMjAiTRr7_ZhB62tN-3YfNWzmJqNdsb-2SNj1raTUUf1h1lsvGYCkZzw5-LIoPsNS_64TZcoGanqa3kfZcBVhga1qwwEVmROypU5iocxWDzszlgElzkBTob6waTLzp5cbGrKHDaknyS_st2ZD6tnf31F2m2bAg?type=png)](https://mermaid.live/edit#pako:eNpFkN1qwzAMhV9F6Lpl92EMuqWwXZRlTcZgcS_URktCazv4Z6w0ffcpTbIZZJ8jPsmyL3iwFWOCtaOugSJVBmS9e3blsMEdrH8CO0MnyM8-sN7B_XL5AKvspZTYjXxmfagd-3IWkD7-gyMjAiTRr7_ZhB62tN-3YfNWzmJqNdsb-2SNj1raTUUf1h1lsvGYCkZzw5-LIoPsNS_64TZcoGanqa3kfZcBVhga1qwwEVmROypU5iocxWDzszlgElzkBTob6waTLzp5cbGrKHDaknyS_st2ZD6tnf31F2m2bAg)

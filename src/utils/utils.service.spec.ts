@@ -500,6 +500,9 @@ describe('UtilsService', () => {
   describe('checkStatus', () => {
     it('should return true if all messages are completed', async () => {
       // Arrange
+      const rabbitMqUrlSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('rabbitmq');
       const userConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce('username');
@@ -520,6 +523,7 @@ describe('UtilsService', () => {
       // Assert
       expect(response).toEqual(true);
       expect(userConfigServiceSpy).toHaveBeenCalled();
+      expect(rabbitMqUrlSpy).toHaveBeenCalled();
       expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith('No more messages');
@@ -527,6 +531,9 @@ describe('UtilsService', () => {
 
     it('should return false if all messages are completed', async () => {
       // Arrange
+      const rabbitMqUrlSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('rabbitmq');
       const userConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce('username');
@@ -545,6 +552,9 @@ describe('UtilsService', () => {
       const response = await service.checkStatus();
 
       // Assert
+      expect(userConfigServiceSpy).toHaveBeenCalled();
+      expect(rabbitMqUrlSpy).toHaveBeenCalled();
+      expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
       expect(response).toEqual(false);
       expect(consoleSpy).toHaveBeenCalledWith(
         'Still a message being processed',
@@ -553,6 +563,9 @@ describe('UtilsService', () => {
 
     it('should return false if error in axios call', async () => {
       // Arrange
+      const rabbitMqUrlSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('rabbitmq');
       const userConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce('username');
@@ -571,6 +584,7 @@ describe('UtilsService', () => {
 
       // Assert
       expect(response).toEqual(false);
+      expect(rabbitMqUrlSpy).toHaveBeenCalled();
       expect(userConfigServiceSpy).toHaveBeenCalled();
       expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
     });
@@ -580,6 +594,9 @@ describe('UtilsService', () => {
       const mockUsername = faker.internet.userName();
       const mockPassword = faker.internet.password();
 
+      const rabbitMqUrlSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('rabbitmq');
       const userConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce(mockUsername);
@@ -596,6 +613,7 @@ describe('UtilsService', () => {
       const response = await service.checkStatus();
 
       // Assert
+      expect(rabbitMqUrlSpy).toHaveBeenCalledWith('general.rabbitmqUrl');
       expect(userConfigServiceSpy).toHaveBeenCalledWith(
         'secrets.rabbitmq.username',
       );
@@ -603,7 +621,7 @@ describe('UtilsService', () => {
         'secrets.rabbitmq.password',
       );
       expect(axiosSpy).toHaveBeenCalledWith(
-        `http://localhost:15672/api/queues/%2F/jobs_queue`,
+        `http://rabbitmq:15672/api/queues/%2F/jobs_queue`,
         {
           auth: {
             username: mockUsername,

@@ -238,7 +238,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
   }
 
   async checkStatus(): Promise<boolean> {
-    const rabbitMqUrl = `http://localhost:15672`;
+    const rabbitMqUrl = `http://${this.configService.get<string>('general.rabbitmqUrl')}:15672`;
     const username = this.configService.get<string>(
       'secrets.rabbitmq.username',
     );
