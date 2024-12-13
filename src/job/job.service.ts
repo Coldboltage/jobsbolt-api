@@ -310,6 +310,7 @@ export class JobService implements OnApplicationBootstrap {
   async findAllCoverLetterToApply(userId: string): Promise<DeepPartial<Job[]>> {
     const jobsToApplyEntity = await this.jobRepository.find({
       where: {
+        interested: true,
         applied: false,
         suited: true,
         coverLetter: {

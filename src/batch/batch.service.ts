@@ -35,13 +35,13 @@ export class BatchService {
     type: BatchType,
   ): Promise<IndividualJobFromBatch[]> {
     const pendingBatchJobs = await this.getPendingBatchJobs(type);
+    const finishedBatches: IndividualJobFromBatch[] = [];
     for (const batch of pendingBatchJobs) {
       console.log('Batch Info');
       console.log(batch);
       const batchStatus = await this.openai.batches.retrieve(batch.id);
       console.log(batchStatus);
       // IF completed
-      const finishedBatches: IndividualJobFromBatch[] = [];
       if (batchStatus.status === BatchStatusEnum.COMPLETED) {
         // Update batch entity
         await this.completed(batch.id);
@@ -51,8 +51,8 @@ export class BatchService {
       }
       // Rest of jobs are still going on
       console.log(finishedBatches);
-      return finishedBatches;
     }
+    return finishedBatches;
   }
 
   async grabCompletedBatchFile(
