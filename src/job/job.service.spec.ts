@@ -1321,6 +1321,7 @@ describe('JobService', () => {
       expect(jobRepoFindSpy).toHaveBeenCalled();
       expect(jobRepoFindSpy).toHaveBeenCalledWith({
         where: {
+          interested: true,
           applied: false,
           suited: true,
           coverLetter: {
