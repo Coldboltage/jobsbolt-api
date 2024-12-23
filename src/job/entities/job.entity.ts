@@ -91,6 +91,10 @@ export class Job {
   @Column({ nullable: true })
   @ApiProperty()
   interested: boolean;
+
+  @Column({ default: false, nullable: true })
+  @ApiProperty()
+  manual: boolean;
 }
 
 export class JobInfoInterface {
@@ -117,6 +121,38 @@ export class JobInfoInterface {
 
   @ApiProperty()
   companyName: string;
+}
+
+export class ManualJobInfoInterface {
+  @ApiProperty({
+    format: 'uuidv4',
+    description: 'Unique Identifer for job record',
+  })
+  indeedId: string;
+
+  @ApiProperty()
+  jobTypeId: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  description: string;
+
+  @ApiProperty()
+  pay: string;
+
+  @ApiProperty()
+  location: string;
+
+  @ApiProperty()
+  companyName: string;
+
+  @ApiProperty()
+  manual: boolean;
+
+  @ApiProperty()
+  link: string;
 }
 
 export interface IndividualJobFromBatch {

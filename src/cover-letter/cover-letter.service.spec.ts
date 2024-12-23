@@ -300,6 +300,7 @@ describe('CoverLetterService', () => {
         notification: false,
         suitabilityScore: 95,
         interested: null,
+        manual: false,
       };
 
       const findOne = jest

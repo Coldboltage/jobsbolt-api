@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { Job } from './entities/job.entity';
 import { DeepPartial } from 'typeorm';
+import { ManualJobDto } from './dto/manual-job.dto';
 
 @ApiTags('job')
 @Controller('job')
@@ -51,6 +52,27 @@ export class JobController {
   })
   byBot(@Param('id') id: string, @Body() createJobDto: CreateJobDto) {
     return this.jobService.addJobsByBot(id, createJobDto.jobs);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('add-job-manually')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'User adds a job manually',
+  })
+  @ApiOkResponse({
+    description: 'Manual job added.',
+    type: [Job],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  addJobManually(@Body() manualJobDto: ManualJobDto) {
+    return this.jobService.addJobManually(manualJobDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -277,6 +299,19 @@ export class JobController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Gets all jobs where the interested is null',
+  })
+  @ApiOkResponse({
+    description: 'All jobs which are pending are sent to the user',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
   @Get('pending-interested')
   findAllJobsNotifiedPendingInterest(@Req() req) {
     return this.jobService.findAllJobsNotifiedPendingInterest(req.user.userId);
@@ -284,11 +319,39 @@ export class JobController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get all of a users interested jobs',
+  })
+  @ApiOkResponse({
+    description: 'All interested jobs sent to user',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
   @Get('interested-jobs')
   findAllInterestedJobsByUser(@Req() req) {
     return this.jobService.findAllInterestedJobsByUser(req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get a specific job for a user',
+  })
+  @ApiOkResponse({
+    description: 'Specific job for user found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
   @Get(':id')
   findOne(@Param('id') indeedId: string) {
     return this.jobService.findOne(indeedId);
