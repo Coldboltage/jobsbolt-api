@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { Job } from './entities/job.entity';
 import { DeepPartial } from 'typeorm';
+import { ManualJobDto } from './dto/manual-job.dto';
 
 @ApiTags('job')
 @Controller('job')
@@ -51,6 +52,27 @@ export class JobController {
   })
   byBot(@Param('id') id: string, @Body() createJobDto: CreateJobDto) {
     return this.jobService.addJobsByBot(id, createJobDto.jobs);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('by-worker/:id')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'User adds a job manually',
+  })
+  @ApiOkResponse({
+    description: 'Manual job added.',
+    type: [Job],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  addJobManually(@Body() manualJobDto: ManualJobDto) {
+    return this.jobService.addJobManually(manualJobDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
