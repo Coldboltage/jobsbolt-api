@@ -654,6 +654,7 @@ describe('JobService', () => {
         coverLetter: new CoverLetter(),
         suitabilityScore: 0,
         interested: null,
+        manual: false,
       };
 
       const existingJobEntityTwo: Job = {
@@ -677,6 +678,7 @@ describe('JobService', () => {
         coverLetter: new CoverLetter(),
         suitabilityScore: 0,
         interested: null,
+        manual: false
       };
 
       const jobTypeEntitySpy = jest
@@ -869,6 +871,7 @@ describe('JobService', () => {
       coverLetter: new CoverLetter(),
       suitabilityScore: 95,
       interested: null,
+      manual: false,
     };
     it('should find all jobs available for a scan', async () => {
       // Arrange
