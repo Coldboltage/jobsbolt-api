@@ -1292,16 +1292,6 @@ describe('JobService', () => {
             user: true,
           },
         },
-        select: {
-          link: true,
-          applied: true,
-          coverLetter: {
-            generatedCoverLetter: true,
-            userPitch: true,
-            id: true,
-          },
-          jobType: false,
-        },
       });
     });
 
@@ -1339,16 +1329,6 @@ describe('JobService', () => {
           jobType: {
             user: true,
           },
-        },
-        select: {
-          link: true,
-          applied: true,
-          coverLetter: {
-            generatedCoverLetter: true,
-            userPitch: true,
-            id: true,
-          },
-          jobType: false,
         },
       });
     });

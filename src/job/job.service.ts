@@ -329,16 +329,6 @@ export class JobService implements OnApplicationBootstrap {
           user: true,
         },
       },
-      select: {
-        link: true,
-        applied: true,
-        coverLetter: {
-          generatedCoverLetter: true,
-          userPitch: true,
-          id: true,
-        },
-        jobType: false,
-      },
     });
     if (!jobsToApplyEntity || jobsToApplyEntity.length === 0)
       throw new NotFoundException('no_cover_letters_ready');
