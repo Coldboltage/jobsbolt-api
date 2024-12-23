@@ -205,14 +205,16 @@ export class JobService implements OnApplicationBootstrap {
       },
       relations: {
         jobType: true,
-      }
-    })
+      },
+    });
 
     if (checkJobLink) {
       throw new ConflictException('job_already_exists');
     }
 
-    const jobEntity = this.jobTypeService.findOne(manualJobDto.jobTypeId);
+    console.log(checkJobLink);
+
+    const jobEntity = await this.jobTypeService.findOne(manualJobDto.jobTypeId);
 
     return this.jobRepository.save({
       indeedId: manualJobDto.indeedId,
@@ -223,9 +225,10 @@ export class JobService implements OnApplicationBootstrap {
       pay: manualJobDto.pay,
       location: manualJobDto.location,
       suited: false,
-      manualJobDtoType: [jobEntity],
+      jobType: [jobEntity],
       scannedLast: null,
       companyName: manualJobDto.companyName,
+      manual: true,
     });
   }
 
@@ -248,7 +251,9 @@ export class JobService implements OnApplicationBootstrap {
     const users = await this.userService.findUsersWithUnsendSuitableJobs();
     console.log(users);
     for (const user of users) {
-      const allJobs = await this.findUsersBestFiveJobs(user.id);
+      const bestJobs = await this.findUsersBestFiveJobs(user.id);
+      const manualJobs = await this.findUserManualJobs(user.id);
+      const allJobs = [...bestJobs, ...manualJobs];
       allJobs.forEach((job) => (job.notification = true));
       await this.jobRepository.save(allJobs);
       if (user.discordId) {
@@ -278,7 +283,7 @@ export class JobService implements OnApplicationBootstrap {
         coverLetter: true,
         jobType: {
           user: true,
-        }
+        },
       },
       where: {
         id: jobId,
@@ -403,6 +408,28 @@ export class JobService implements OnApplicationBootstrap {
         },
         suitabilityScore: MoreThanOrEqual(85),
         suited: true,
+        notification: false,
+      },
+    });
+  }
+
+  async findUserManualJobs(userId): Promise<Job[]> {
+    return this.jobRepository.find({
+      order: {
+        suitabilityScore: 'DESC',
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+        manual: true,
         notification: false,
       },
     });

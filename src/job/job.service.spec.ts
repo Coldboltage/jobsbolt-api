@@ -908,6 +908,9 @@ describe('JobService', () => {
       mockJob.conciseSuited = faker.lorem.sentence();
       mockJob.suitabilityScore = 95;
 
+      const manualMockJob = structuredClone(mockJob)
+      manualMockJob.manual = true
+
       const findUsersWithUnsendSuitableJobsSpy = jest
         .spyOn(userService, 'findUsersWithUnsendSuitableJobs')
         .mockResolvedValueOnce([mockUser]);
@@ -915,6 +918,10 @@ describe('JobService', () => {
       const findUsersBestFiveJobsSpy = jest
         .spyOn(service, 'findUsersBestFiveJobs')
         .mockResolvedValueOnce([mockJob]);
+
+      const findManualJobsSpy = jest
+        .spyOn(service, 'findUserManualJobs')
+        .mockResolvedValueOnce([manualMockJob]);
 
       const discordServiceSendMessageSpy = jest.spyOn(
         discordService,
@@ -926,6 +933,7 @@ describe('JobService', () => {
       // Assert
       expect(findUsersWithUnsendSuitableJobsSpy).toHaveBeenCalled();
       expect(findUsersBestFiveJobsSpy).toHaveBeenCalled();
+      expect(findManualJobsSpy).toHaveBeenCalled();
       expect(discordServiceSendMessageSpy).toHaveBeenCalled();
     });
 
@@ -1503,7 +1511,7 @@ describe('JobService', () => {
     });
   });
 
-  describe('findUsersBestFiveJobs', () => {
+  describe('findUserManualJobs', () => {
     it('find the users best five jobs not sent out yet', async () => {
       // Arrange
       const { mockUser } = createFullUserWithDetails();
@@ -1544,6 +1552,52 @@ describe('JobService', () => {
             }),
             suitabilityScore: MoreThanOrEqual(85), // Ensure this is the same instance
             suited: true,
+            notification: false,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('findManualJobs', () => {
+    it('find users manual jobs', async () => {
+      // Arrange
+      const { mockUser } = createFullUserWithDetails();
+      const findJobsSpy = jest
+        .spyOn(jobRepository, 'find')
+        .mockResolvedValueOnce([
+          new Job(),
+          new Job(),
+          new Job(),
+          new Job(),
+          new Job(),
+        ]);
+
+      // Act
+      const response = await service.findUserManualJobs(mockUser.id);
+
+      // Assert
+      const allInstances = response.every((job) => job instanceof Job);
+      expect(allInstances).toBe(true);
+      expect(response.length).toBe(5);
+      expect(findJobsSpy).toHaveBeenCalled();
+      expect(findJobsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          order: {
+            suitabilityScore: 'DESC',
+          },
+          relations: {
+            jobType: {
+              user: true,
+            },
+          },
+          where: expect.objectContaining({
+            jobType: expect.objectContaining({
+              user: expect.objectContaining({
+                id: mockUser.id,
+              }),
+            }),
+            manual: true,
             notification: false,
           }),
         }),
@@ -1760,7 +1814,29 @@ describe('JobService', () => {
       const result = await service.addJobManually(mockJob);
 
       // Assert
-      expect(result).toEqual(savedMockJob);
+      expect(result).toMatchObject({
+        id: expect.any(String), // Ensure id is generated
+        indeedId: mockJob.indeedId,
+        applied: false,
+        link: mockJob.link,
+        name: mockJob.name,
+        companyName: mockJob.companyName,
+        date: expect.any(Date), // Validate dynamic date
+        description: mockJob.description,
+        pay: mockJob.pay,
+        location: mockJob.location,
+        summary: null,
+        conciseDescription: null,
+        conciseSuited: null,
+        suited: false,
+        suitabilityScore: null,
+        jobType: expect.arrayContaining([mockJobType]), // Validate job type array
+        scannedLast: null,
+        notification: false,
+        interested: false,
+        manual: true, // Ensure the `manual` property is correctly set
+        coverLetter: null,
+      });
       expect(checkJobSpy).toHaveBeenCalled();
       expect(saveJobSpy).toHaveBeenCalled();
     });
