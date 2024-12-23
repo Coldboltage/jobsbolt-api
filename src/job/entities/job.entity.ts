@@ -91,6 +91,10 @@ export class Job {
   @Column({ nullable: true })
   @ApiProperty()
   interested: boolean;
+
+  @Column({ nullable: true })
+  @ApiProperty()
+  manual: boolean;
 }
 
 export class JobInfoInterface {
