@@ -15,6 +15,8 @@ async function bootstrap() {
     origin: 'http://localhost:1337', // Only allow requests from this URL
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allow JWTs, etc.
+    credentials: true, // Required to allow cookies and credentials
+
   });
 
   console.log('cors being used')

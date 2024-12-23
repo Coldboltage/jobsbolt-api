@@ -47,8 +47,8 @@ export class UserService {
         jobType: {
           active: true,
           jobs: {
-            suitabilityScore: MoreThanOrEqual(85),
-            suited: true,
+            // suitabilityScore: MoreThanOrEqual(85),
+            // suited: true,
             notification: false,
           },
         },

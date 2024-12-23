@@ -459,7 +459,6 @@ export class JobService implements OnApplicationBootstrap {
     return this.jobRepository.find({
       where: {
         notification: true,
-        suited: true,
         interested: IsNull(),
         applied: false,
         jobType: {
