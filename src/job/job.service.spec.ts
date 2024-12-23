@@ -19,6 +19,7 @@ import {
   IndividualJobFromBatchResponseBody,
   Job,
   JobInfoInterface,
+  ManualJobInfoInterface,
   ParsedJobContent,
 } from './entities/job.entity';
 import { ConfigService } from '@nestjs/config';
@@ -678,7 +679,7 @@ describe('JobService', () => {
         coverLetter: new CoverLetter(),
         suitabilityScore: 0,
         interested: null,
-        manual: false
+        manual: false,
       };
 
       const jobTypeEntitySpy = jest
@@ -1702,6 +1703,66 @@ describe('JobService', () => {
           },
         }),
       );
+    });
+  });
+
+  describe('addJobManually', () => {
+    it('should add a manual job', async () => {
+      // Arrange
+      const mockJobType = new JobType();
+      mockJobType.id = faker.string.uuid();
+
+      const mockJob: ManualJobInfoInterface = {
+        indeedId: faker.string.uuid(),
+        jobTypeId: mockJobType.id,
+        name: faker.person.jobTitle(),
+        description: faker.lorem.paragraph(),
+        pay: '40000',
+        location: faker.location.streetAddress(),
+        companyName: faker.company.name(),
+        manual: true,
+        link: faker.internet.url(),
+      };
+
+      const savedMockJob: Job = {
+        id: faker.string.uuid(),
+        indeedId: mockJob.indeedId,
+        applied: false,
+        link: mockJob.link,
+        name: mockJob.name,
+        companyName: mockJob.companyName,
+        date: faker.date.anytime(),
+        description: mockJob.description,
+        pay: mockJob.pay,
+        location: mockJob.location,
+        summary: null,
+        conciseDescription: null,
+        conciseSuited: null,
+        suited: false,
+        suitabilityScore: null,
+        jobType: [mockJobType],
+        scannedLast: null,
+        notification: false,
+        interested: false,
+        manual: mockJob.manual,
+        coverLetter: null,
+      };
+
+      const checkJobSpy = jest
+        .spyOn(jobRepository, 'findOne')
+        .mockResolvedValueOnce(null);
+
+      const saveJobSpy = jest
+        .spyOn(jobRepository, 'save')
+        .mockResolvedValueOnce(savedMockJob);
+
+      // Act
+      const result = await service.addJobManually(mockJob);
+
+      // Assert
+      expect(result).toEqual(savedMockJob);
+      expect(checkJobSpy).toHaveBeenCalled();
+      expect(saveJobSpy).toHaveBeenCalled();
     });
   });
 });

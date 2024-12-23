@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
   OnApplicationBootstrap,
@@ -29,6 +30,7 @@ import { DiscordService } from '../discord/discord.service';
 
 import { UtilsService } from '../utils/utils.service';
 import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
+import { ManualJobDto } from './dto/manual-job.dto';
 const path = require('path');
 const fs = require('fs');
 
@@ -191,6 +193,40 @@ export class JobService implements OnApplicationBootstrap {
       console.log(`${jobEntity.indeedId} added`);
     }
     return;
+  }
+
+  async addJobManually(manualJobDto: ManualJobDto): Promise<Job> {
+    const checkJobLink = await this.jobRepository.findOne({
+      where: {
+        jobType: {
+          id: manualJobDto.jobTypeId,
+        },
+        link: manualJobDto.link,
+      },
+      relations: {
+        jobType: true,
+      }
+    })
+
+    if (checkJobLink) {
+      throw new ConflictException('job_already_exists');
+    }
+
+    const jobEntity = this.jobTypeService.findOne(manualJobDto.jobTypeId);
+
+    return this.jobRepository.save({
+      indeedId: manualJobDto.indeedId,
+      link: manualJobDto.link,
+      name: manualJobDto.name,
+      date: new Date(),
+      description: manualJobDto.description,
+      pay: manualJobDto.pay,
+      location: manualJobDto.location,
+      suited: false,
+      manualJobDtoType: [jobEntity],
+      scannedLast: null,
+      companyName: manualJobDto.companyName,
+    });
   }
 
   async scanAvailableJobs(): Promise<Job[]> {
