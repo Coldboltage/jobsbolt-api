@@ -66,6 +66,18 @@ services:
       - rabbitmq
       - prometheus
       - jobsboltapi
+
+  jobsboltwebsite:
+    image: coldbolt/jobsbolt-website:dev-latest
+    container_name: jobsbolt-website-local
+    ports:
+      - "1337:1337"
+    env_file:
+      - .env # Load application-specific environment variables from .env
+    depends_on:
+      - postgres
+      - rabbitmq
+      - prometheus
   
   # psql-tester:
   #   image: alpine
