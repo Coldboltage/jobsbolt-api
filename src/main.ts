@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import * as bodyParser from 'body-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import './instrument';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -10,6 +11,9 @@ async function bootstrap() {
   });
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb' }));
+
+  const configService = app.get(ConfigService);
+  const websiteUrl = configService.get('general.websiteUrl')
 
   app.enableCors({
     origin: 'http://localhost:1337', // Only allow requests from this URL

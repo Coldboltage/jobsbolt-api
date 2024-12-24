@@ -9,6 +9,7 @@ const generalEnvSchema = z.object({
   FULL_TEST: z.enum(['true', 'false']),
   API_URL: z.string(),
   RABBITMQ_URL: z.string(),
+  WEBSITE_URL: z.string(),
 });
 
 export type GeneralConfig = z.infer<typeof generalEnvSchema>;
