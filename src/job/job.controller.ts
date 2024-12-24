@@ -116,7 +116,7 @@ export class JobController {
     description: 'Forbidden. User does not have the required role.',
   })
   getAllNewJobs(@Req() req) {
-    return this.jobService.findAllUserUnsendJobs(req.user.userId);
+    return this.jobService.findAllUserUnsendJobs(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -135,8 +135,8 @@ export class JobController {
     description: 'Forbidden. User does not have the required role.',
   })
   findAllSuitableJobs(@Req() req) {
-    console.log(req.user.userId);
-    return this.jobService.findAllSuitableJobs(req.user.userId);
+    console.log(req.user.id);
+    return this.jobService.findAllSuitableJobs(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -158,8 +158,8 @@ export class JobController {
     description: 'Forbidden. User does not have the required role.',
   })
   resetFalse(@Req() req) {
-    console.log(req.user.userId);
-    return this.jobService.resetFalse(req.user.userId);
+    console.log(req.user.id);
+    return this.jobService.resetFalse(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -184,7 +184,7 @@ export class JobController {
     @Req() req,
     @Param('state', ParseBoolPipe) state: boolean,
   ) {
-    return this.jobService.findAllAppliedJobs(req.user.userId, state);
+    return this.jobService.findAllAppliedJobs(req.user.id, state);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -207,7 +207,7 @@ export class JobController {
   })
   @Get('cover-letter-to-apply')
   findAllCoverLetterToApply(@Req() req): Promise<DeepPartial<Job[]>> {
-    return this.jobService.findAllCoverLetterToApply(req.user.userId);
+    return this.jobService.findAllCoverLetterToApply(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -228,7 +228,7 @@ export class JobController {
     description: 'No cover letter generated for any job.',
   })
   sendDiscordNewJobMessageToUser(@Req() req): Promise<void> {
-    return this.jobService.sendDiscordNewJobMessageToUser(req.user.userId);
+    return this.jobService.sendDiscordNewJobMessageToUser(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -255,7 +255,7 @@ export class JobController {
     @Param('indeedId') indeedId: string,
   ) {
     return this.jobService.updateJobApplication(
-      req.user.userId,
+      req.user.id,
       indeedId,
       state,
     );
@@ -270,7 +270,7 @@ export class JobController {
     @Param('state', ParseBoolPipe) interestedState: boolean,
   ) {
     return this.jobService.jobInterestState(
-      req.user.userId,
+      req.user.id,
       jobId,
       interestedState,
     );
@@ -314,7 +314,8 @@ export class JobController {
   })
   @Get('pending-interested')
   findAllJobsNotifiedPendingInterest(@Req() req) {
-    return this.jobService.findAllJobsNotifiedPendingInterest(req.user.userId);
+    console.log(req.user.id)
+    return this.jobService.findAllJobsNotifiedPendingInterest(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -334,7 +335,7 @@ export class JobController {
   })
   @Get('interested-jobs')
   findAllInterestedJobsByUser(@Req() req) {
-    return this.jobService.findAllInterestedJobsByUser(req.user.userId);
+    return this.jobService.findAllInterestedJobsByUser(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

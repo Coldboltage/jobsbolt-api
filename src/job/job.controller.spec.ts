@@ -305,7 +305,7 @@ describe('JobController', () => {
       // Assert
       expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalled();
       expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalledWith(
-        mockReq.user.userId,
+        mockreq.user.id,
       );
     });
   });

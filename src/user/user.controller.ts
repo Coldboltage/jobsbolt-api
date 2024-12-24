@@ -34,7 +34,7 @@ export class UserController {
   @Post('add-cv')
   @UseInterceptors(FileInterceptor('file'))
   addCv(@UploadedFile() file: Express.Multer.File, @Req() req) {
-    return this.userService.updateUserCV(req.user.userId, file);
+    return this.userService.updateUserCV(req.user.id, file);
   }
 
   @Get()
