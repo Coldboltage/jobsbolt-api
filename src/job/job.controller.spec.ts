@@ -293,7 +293,7 @@ describe('JobController', () => {
       // Arrange
       const mockReq = {
         user: {
-          userId: faker.string.uuid(),
+          id: faker.string.uuid(),
         },
       };
       const sendDiscordNewJobMessageToUserSerivceSpy = jest.spyOn(
@@ -305,7 +305,7 @@ describe('JobController', () => {
       // Assert
       expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalled();
       expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalledWith(
-        mockreq.user.id,
+        mockReq.user.id,
       );
     });
   });
@@ -315,7 +315,7 @@ describe('JobController', () => {
       // Arrange
       const reqMock = {
         user: {
-          userId: faker.string.uuid(),
+          id: faker.string.uuid(),
         },
       };
 
@@ -337,7 +337,7 @@ describe('JobController', () => {
       // Arrange
       const reqMock = {
         user: {
-          userId: faker.string.uuid(),
+          id: faker.string.uuid(),
         },
       };
 
@@ -366,7 +366,7 @@ describe('JobController', () => {
       // Arrange
       const reqMock = {
         user: {
-          userId: faker.string.uuid(),
+          id: faker.string.uuid(),
         },
       };
 

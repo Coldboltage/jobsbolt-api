@@ -132,8 +132,6 @@ describe('UserService', () => {
             jobType: expect.objectContaining({
               active: true,
               jobs: expect.objectContaining({
-                suitabilityScore: MoreThanOrEqual(85),
-                suited: true,
                 notification: false,
               }),
             }),

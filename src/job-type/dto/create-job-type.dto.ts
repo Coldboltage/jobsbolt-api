@@ -8,7 +8,7 @@ export class CreateJobTypeDto {
   location: string;
 
   @IsUUID()
-  userId: string;
+  id: string;
 
   @IsNumber()
   desiredPay: number;

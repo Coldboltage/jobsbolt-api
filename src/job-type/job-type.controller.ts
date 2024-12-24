@@ -33,9 +33,9 @@ export class JobTypeController {
     return this.jobTypeService.findAll();
   }
 
-  @Get('suited-jobs/:userId')
-  findAllSuitableJobs(@Param('userId') userId: string) {
-    return this.jobTypeService.findAllSuitableJobs(userId);
+  @Get('suited-jobs/:id')
+  findAllSuitableJobs(@Param('id') id: string) {
+    return this.jobTypeService.findAllSuitableJobs(id);
   }
 
   @Get(':id')

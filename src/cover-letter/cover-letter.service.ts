@@ -178,7 +178,7 @@ export class CoverLetterService {
     return `This action updates a #${id} coverLetter`;
   }
 
-  async resetCvs(userId: string, cvIds: string[]): Promise<CoverLetter[]> {
+  async resetCvs(id: string, cvIds: string[]): Promise<CoverLetter[]> {
     const listOfCvs = await this.coverLetterRepository.find({
       relations: {
         job: {
@@ -191,7 +191,7 @@ export class CoverLetterService {
         job: {
           jobType: {
             user: {
-              id: userId,
+              id: id,
             },
           },
         },

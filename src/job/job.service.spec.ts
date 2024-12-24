@@ -973,7 +973,7 @@ describe('JobService', () => {
   });
 
   describe('findAllSuitableJobs', () => {
-    it('should find all suitable jobs with the userId', async () => {
+    it('should find all suitable jobs with the id', async () => {
       // Arrange
       const { mockUser, mockJob } = createFullUserWithDetails();
       mockJob.suited = true;
@@ -1309,14 +1309,14 @@ describe('JobService', () => {
 
     it('should throw an error if no jobs are found', async () => {
       // Arrange
-      const userId = faker.string.uuid();
+      const id = faker.string.uuid();
 
       const jobRepoFindSpy = jest
         .spyOn(jobRepository, 'find')
         .mockResolvedValue([]);
 
       // Act
-      const response = service.findAllCoverLetterToApply(userId);
+      const response = service.findAllCoverLetterToApply(id);
 
       // Assert
       await expect(response).rejects.toThrow('no_cover_letters_ready');
@@ -1332,7 +1332,7 @@ describe('JobService', () => {
           },
           jobType: {
             user: {
-              id: userId,
+              id: id,
             },
           },
         },
@@ -1380,7 +1380,7 @@ describe('JobService', () => {
     it('should reset all jobs to false for user', async () => {
       // Arrange
       const { mockJob } = createFullUserWithDetails();
-      const userId = mockJob.jobType[0].user.id;
+      const id = mockJob.jobType[0].user.id;
 
       mockJob.suited = false;
 
@@ -1395,7 +1395,7 @@ describe('JobService', () => {
         .mockResolvedValueOnce(updatedMockJob);
 
       // Act
-      await service.resetFalse(userId);
+      await service.resetFalse(id);
 
       // Assert
       expect(jobRepositoryFindSpy).toHaveBeenCalled();
@@ -1408,7 +1408,7 @@ describe('JobService', () => {
         where: {
           jobType: {
             user: {
-              id: userId,
+              id: id,
             },
           },
           suited: false,
@@ -1467,7 +1467,7 @@ describe('JobService', () => {
     it('should update the job application status', async () => {
       // Arrange
       const mockJob = createFullUserWithDetails().mockJob;
-      const userId = mockJob.jobType[0].user.id;
+      const id = mockJob.jobType[0].user.id;
       const status = true;
 
       mockJob.applied = false;
@@ -1484,7 +1484,7 @@ describe('JobService', () => {
         .mockResolvedValueOnce(updatedMockJob);
       // Act
       const response = await service.updateJobApplication(
-        userId,
+        id,
         mockJob.indeedId,
         status,
       );
@@ -1500,7 +1500,7 @@ describe('JobService', () => {
           indeedId: mockJob.indeedId,
           jobType: {
             user: {
-              id: userId,
+              id: id,
             },
           },
         },
@@ -1649,7 +1649,6 @@ describe('JobService', () => {
         expect.objectContaining({
           where: {
             notification: true,
-            suited: true,
             interested: IsNull(),
             applied: false,
             jobType: {

@@ -262,8 +262,8 @@ export class JobService implements OnApplicationBootstrap {
     }
   }
 
-  async sendDiscordNewJobMessageToUser(userId: string): Promise<void> {
-    const allJobs = await this.findUsersBestFiveJobs(userId);
+  async sendDiscordNewJobMessageToUser(id: string): Promise<void> {
+    const allJobs = await this.findUsersBestFiveJobs(id);
     allJobs.forEach((job) => (job.notification = true));
     await this.jobRepository.save(allJobs);
     if (allJobs.length === 0 || !allJobs[0].jobType[0].user.discordId) return;
@@ -291,7 +291,7 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
-  async findAllSuitableJobs(userId: string) {
+  async findAllSuitableJobs(id: string) {
     const allSuitedJobs = await this.jobRepository.find({
       relations: {
         jobType: {
@@ -301,7 +301,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         suited: true,
@@ -310,7 +310,7 @@ export class JobService implements OnApplicationBootstrap {
     return allSuitedJobs;
   }
 
-  async findAllUserUnsendJobs(userId: string): Promise<Job[]> {
+  async findAllUserUnsendJobs(id: string): Promise<Job[]> {
     const allJobsToSend = await this.jobRepository.find({
       relations: {
         jobType: {
@@ -320,7 +320,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         suited: true,
@@ -330,7 +330,7 @@ export class JobService implements OnApplicationBootstrap {
     return allJobsToSend;
   }
 
-  async findAllAppliedJobs(userId: string, state: boolean) {
+  async findAllAppliedJobs(id: string, state: boolean) {
     return this.jobRepository.find({
       relations: {
         jobType: {
@@ -341,14 +341,14 @@ export class JobService implements OnApplicationBootstrap {
         applied: state,
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
       },
     });
   }
 
-  async findAllCoverLetterToApply(userId: string): Promise<DeepPartial<Job[]>> {
+  async findAllCoverLetterToApply(id: string): Promise<DeepPartial<Job[]>> {
     const jobsToApplyEntity = await this.jobRepository.find({
       where: {
         interested: true,
@@ -360,7 +360,7 @@ export class JobService implements OnApplicationBootstrap {
         },
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
       },
@@ -382,14 +382,14 @@ export class JobService implements OnApplicationBootstrap {
     return result;
   }
 
-  async sendUserNewJobs(userId: string) {
-    const allJobsToSend = await this.findAllUserUnsendJobs(userId);
+  async sendUserNewJobs(id: string) {
+    const allJobsToSend = await this.findAllUserUnsendJobs(id);
     allJobsToSend.forEach((job) => (job.notification = true));
     await this.jobRepository.save(allJobsToSend);
     return allJobsToSend;
   }
 
-  async findUsersBestFiveJobs(userId): Promise<Job[]> {
+  async findUsersBestFiveJobs(id): Promise<Job[]> {
     return this.jobRepository.find({
       order: {
         suitabilityScore: 'DESC',
@@ -403,7 +403,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         suitabilityScore: MoreThanOrEqual(85),
@@ -413,7 +413,7 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
-  async findUserManualJobs(userId): Promise<Job[]> {
+  async findUserManualJobs(id): Promise<Job[]> {
     return this.jobRepository.find({
       order: {
         suitabilityScore: 'DESC',
@@ -426,7 +426,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         manual: true,
@@ -435,7 +435,7 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
-  async jobInterestState(userId, jobId, interestedState): Promise<Job> {
+  async jobInterestState(id, jobId, interestedState): Promise<Job> {
     const jobEntity = await this.jobRepository.findOne({
       relations: {
         jobType: {
@@ -445,7 +445,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         id: jobId,
@@ -455,7 +455,7 @@ export class JobService implements OnApplicationBootstrap {
     return this.jobRepository.save(jobEntity);
   }
 
-  async findAllJobsNotifiedPendingInterest(userId: string): Promise<Job[]> {
+  async findAllJobsNotifiedPendingInterest(id: string): Promise<Job[]> {
     return this.jobRepository.find({
       where: {
         notification: true,
@@ -463,7 +463,7 @@ export class JobService implements OnApplicationBootstrap {
         applied: false,
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         coverLetter: {
@@ -479,7 +479,7 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
-  async findAllInterestedJobsByUser(userId: string): Promise<Job[]> {
+  async findAllInterestedJobsByUser(id: string): Promise<Job[]> {
     return this.jobRepository.find({
       where: {
         notification: true,
@@ -488,7 +488,7 @@ export class JobService implements OnApplicationBootstrap {
         applied: false,
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         coverLetter: {
@@ -505,7 +505,7 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
-  async resetFalse(userId: string) {
+  async resetFalse(id: string) {
     const allFalseJobs = await this.jobRepository.find({
       relations: {
         jobType: {
@@ -515,7 +515,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         suited: false,
@@ -542,7 +542,7 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   async updateJobApplication(
-    userId: string,
+    id: string,
     indeedId: string,
     status: boolean,
   ) {
@@ -556,7 +556,7 @@ export class JobService implements OnApplicationBootstrap {
         indeedId,
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
       },

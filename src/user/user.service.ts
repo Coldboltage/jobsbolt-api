@@ -104,8 +104,8 @@ export class UserService {
     return `This action removes a #${id} user`;
   }
 
-  async updateUserCV(userId: string, cv: Express.Multer.File) {
-    const userEntity = await this.findOne(userId);
+  async updateUserCV(id: string, cv: Express.Multer.File) {
+    const userEntity = await this.findOne(id);
 
     // Define the render_page function (gptCode)
     function render_page(pageData) {

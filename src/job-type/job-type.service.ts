@@ -91,7 +91,7 @@ export class JobTypeService implements OnApplicationBootstrap {
     return this.jobTypeRepository.find({});
   }
 
-  async findAllSuitableJobs(userId: string) {
+  async findAllSuitableJobs(id: string) {
     const allSuitedJobs = await this.jobTypeRepository.find({
       relations: {
         user: true,
@@ -99,7 +99,7 @@ export class JobTypeService implements OnApplicationBootstrap {
       },
       where: {
         user: {
-          id: userId,
+          id: id,
         },
         jobs: {
           suited: true,
