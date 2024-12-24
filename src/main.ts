@@ -16,7 +16,7 @@ async function bootstrap() {
   const websiteUrl = configService.get('general.websiteUrl')
 
   app.enableCors({
-    origin: 'http://localhost:1337', // Only allow requests from this URL
+    origin: `http://${websiteUrl}:1337`, // Only allow requests from this URL
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allow JWTs, etc.
     credentials: true, // Required to allow cookies and credentials
