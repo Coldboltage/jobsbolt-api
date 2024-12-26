@@ -38,7 +38,7 @@ services:
     image: grafana/grafana
     container_name: jobsbolt-grafana-local
     ports:
-      - "3001:3000" # Grafana is exposed on port 3000 internally, use 3001 for host access to avoid conflicts
+      - "3001:3000"
     depends_on:
       - prometheus
     volumes:
@@ -46,6 +46,7 @@ services:
 
   jobsboltapi:
     image: coldbolt/jobsbolt-api:dev-latest
+    pull_policy: always
     container_name: jobsbolt-api-local
     ports:
       - "3000:3000"
@@ -59,6 +60,7 @@ services:
   jobsboltworker:
     image: coldbolt/jobsbolt-worker:latest
     container_name: jobsbolt-worker-local
+    pull_policy: always
     env_file:
       - .env # Load application-specific environment variables from .env
     depends_on:
@@ -67,31 +69,20 @@ services:
       - prometheus
       - jobsboltapi
 
-  # jobsboltwebsite:
-  #   image: coldbolt/jobsbolt-website:dev-latest
-  #   container_name: jobsbolt-website-local
-  #   ports:
-  #     - "1337:1337"
-  #   env_file:
-  #     - .env # Load application-specific environment variables from .env
-  #   depends_on:
-  #     - postgres
-  #     - rabbitmq
-  #     - prometheus
-
   jobsboltwebsite:
       build:
         context: "C:/Users/aland/Documents/projects/jobsbolt/jobsbolt-website" # Absolute path to jobsbolt-website
         dockerfile: "C:/Users/aland/Documents/projects/jobsbolt/jobsbolt-website/Dockerfile" # Absolute path to Dockerfile
         args:
           NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL} # Pass from .env or manually
+      pull_policy: always
       container_name: jobsbolt-website-local
       ports:
-        - "1337:1337"                                  # Expose port 1337
+        - "1337:1337"                                 
       env_file:
-        - .env                                 # Use .env from the compose file's directory
+        - .env                                 
       depends_on:
-        - jobsboltapi                                  # Ensure API starts before the website
+        - jobsboltapi                                  
         - postgres
         - rabbitmq
         - prometheus
