@@ -70,11 +70,12 @@ services:
       - jobsboltapi
 
   jobsboltwebsite:
-      build:
-        context: "C:/Users/aland/Documents/projects/jobsbolt/jobsbolt-website" # Absolute path to jobsbolt-website
-        dockerfile: "C:/Users/aland/Documents/projects/jobsbolt/jobsbolt-website/Dockerfile" # Absolute path to Dockerfile
-        args:
-          NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL} # Pass from .env or manually
+      image: coldbolt/jobsbolt-website:dev-latest
+      # build:
+      #   context: "C:/Users/aland/Documents/projects/jobsbolt/jobsbolt-website" # Absolute path to jobsbolt-website
+      #   dockerfile: "C:/Users/aland/Documents/projects/jobsbolt/jobsbolt-website/Dockerfile" # Absolute path to Dockerfile
+      #   args:
+      #     NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL} # Pass from .env or manually
       pull_policy: always
       container_name: jobsbolt-website-local
       ports:
