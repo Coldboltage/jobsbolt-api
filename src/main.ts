@@ -19,6 +19,8 @@ async function bootstrap() {
     // origin: `http://${websiteUrl}:1337`, // Only allow requests from this URL
     origin: (origin, callback) => {
       // Allow localhost and ngrok URLs
+      console.log(websiteUrl)
+      console.log(origin)
       if (!origin || origin.includes(websiteUrl)) {
         callback(null, true);
       } else {
