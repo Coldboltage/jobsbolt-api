@@ -16,6 +16,8 @@ services:
     ports:
       - "80:80"    # HTTP (for Let's Encrypt to verify)
       - "443:443"  # HTTPS
+      - "8080:8080"  # Traefik dashboard
+
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"  # Allows Traefik to talk to Docker API
       - "./acme.json:/acme.json"                      # For Let's Encrypt certificate storage
