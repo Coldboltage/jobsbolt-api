@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { Job } from './entities/job.entity';
 import { DeepPartial } from 'typeorm';
+import { ManualJobDto } from './dto/manual-job.dto';
 
 @ApiTags('job')
 @Controller('job')
@@ -51,6 +52,27 @@ export class JobController {
   })
   byBot(@Param('id') id: string, @Body() createJobDto: CreateJobDto) {
     return this.jobService.addJobsByBot(id, createJobDto.jobs);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('add-job-manually')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'User adds a job manually',
+  })
+  @ApiOkResponse({
+    description: 'Manual job added.',
+    type: [Job],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  addJobManually(@Body() manualJobDto: ManualJobDto) {
+    return this.jobService.addJobManually(manualJobDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -94,7 +116,7 @@ export class JobController {
     description: 'Forbidden. User does not have the required role.',
   })
   getAllNewJobs(@Req() req) {
-    return this.jobService.findAllUserUnsendJobs(req.user.userId);
+    return this.jobService.findAllUserUnsendJobs(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -113,8 +135,8 @@ export class JobController {
     description: 'Forbidden. User does not have the required role.',
   })
   findAllSuitableJobs(@Req() req) {
-    console.log(req.user.userId);
-    return this.jobService.findAllSuitableJobs(req.user.userId);
+    console.log(req.user.id);
+    return this.jobService.findAllSuitableJobs(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -136,8 +158,8 @@ export class JobController {
     description: 'Forbidden. User does not have the required role.',
   })
   resetFalse(@Req() req) {
-    console.log(req.user.userId);
-    return this.jobService.resetFalse(req.user.userId);
+    console.log(req.user.id);
+    return this.jobService.resetFalse(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -162,7 +184,7 @@ export class JobController {
     @Req() req,
     @Param('state', ParseBoolPipe) state: boolean,
   ) {
-    return this.jobService.findAllAppliedJobs(req.user.userId, state);
+    return this.jobService.findAllAppliedJobs(req.user.id, state);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -185,7 +207,28 @@ export class JobController {
   })
   @Get('cover-letter-to-apply')
   findAllCoverLetterToApply(@Req() req): Promise<DeepPartial<Job[]>> {
-    return this.jobService.findAllCoverLetterToApply(req.user.userId);
+    return this.jobService.findAllCoverLetterToApply(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Get the first most suitable jobs for a user and send that to the user',
+  })
+  @ApiOkResponse({
+    description:
+      'Discord bot has sent the next five most suitable jobs to said user.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiExpectationFailedResponse({
+    description: 'No cover letter generated for any job.',
+  })
+  sendDiscordNewJobMessageToUser(@Req() req): Promise<void> {
+    return this.jobService.sendDiscordNewJobMessageToUser(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -212,12 +255,104 @@ export class JobController {
     @Param('indeedId') indeedId: string,
   ) {
     return this.jobService.updateJobApplication(
-      req.user.userId,
+      req.user.id,
       indeedId,
       state,
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @Patch('change-interested/:jobId/:state')
+  jobInterestState(
+    @Req() req,
+    @Param('jobId') jobId: string,
+    @Param('state', ParseBoolPipe) interestedState: boolean,
+  ) {
+    return this.jobService.jobInterestState(
+      req.user.id,
+      jobId,
+      interestedState,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('new-job-discord-message')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Send discord message to users with new jobs which have not been processed for suitability',
+  })
+  @ApiOkResponse({
+    description: 'Sends Discord messages for newly added jobs.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  sendDiscordNewJobMessage() {
+    return this.jobService.sendDiscordNewJobMessage();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Gets all jobs where the interested is null',
+  })
+  @ApiOkResponse({
+    description: 'All jobs which are pending are sent to the user',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  @Get('pending-interested')
+  findAllJobsNotifiedPendingInterest(@Req() req) {
+    console.log(req.user.id)
+    return this.jobService.findAllJobsNotifiedPendingInterest(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get all of a users interested jobs',
+  })
+  @ApiOkResponse({
+    description: 'All interested jobs sent to user',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  @Get('interested-jobs')
+  findAllInterestedJobsByUser(@Req() req) {
+    return this.jobService.findAllInterestedJobsByUser(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get a specific job for a user',
+  })
+  @ApiOkResponse({
+    description: 'Specific job for user found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
   @Get(':id')
   findOne(@Param('id') indeedId: string) {
     return this.jobService.findOne(indeedId);

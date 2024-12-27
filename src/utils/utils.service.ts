@@ -15,7 +15,15 @@ export class UtilsService {
   constructor(private configService: ConfigService) { }
 
   createJobContentMessage(job: Job) {
-    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType[0].user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType[0].user.description}. The CV helps but the description gives a more recent telling of what the user is thinking.`;
+    const jobTypeDescriptions: string[] = [];
+
+    for (const jobType of job.jobType) {
+      jobTypeDescriptions.push(jobType.description);
+    }
+
+    const allDescriptions = jobTypeDescriptions.join('\n');
+
+    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType[0].user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType[0].user.description}. The CV helps but the description gives a more recent telling of what the user is thinking. The job type description is as follows: ${allDescriptions}. This serves to further refine the search, specifying particular criteria for the type of job being sought.`;
   }
 
   createCoverLetterMessage(coverLetter: CoverLetter) {
@@ -42,12 +50,12 @@ Goal: The generated cover letter should reflect the user's personal voice and st
       method: 'POST',
       url: '/v1/chat/completions',
       body: {
-        model: 'gpt-4o-2024-08-06',
+        model: 'gpt-4o-2024-11-20',
         messages: [
           {
             role: 'system',
             content:
-              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate. We want to make sure the text is not AI detectable',
+              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate. We want to make sure the text is not AI detectable. It is extremely important to make sure the candidate and their filters which can be idenfied in their initial message is honoured as we wish not to state jobs are suited if the user has no interest in said job via their message',
           },
           { role: 'user', content: this.createJobContentMessage(job) },
         ],
@@ -62,12 +70,17 @@ Goal: The generated cover letter should reflect the user's personal voice and st
                 analysis: {
                   type: 'string',
                   description:
-                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
+                    "The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the user's wishes be met. If they say they could do something, good. If the candidate says they are not interested in something, then we need to honor this. You must be very strict. Weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%). Use these weights to structure the analysis.",
                 },
                 is_suitable: {
                   type: 'boolean',
                   description:
-                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
+                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided. This should be very strict.',
+                },
+                suitabilityScore: {
+                  type: 'number',
+                  description:
+                    'A whole number from 0 to 100 indicating the suitability of the candidate for the job. Higher means more suitable. This should be very strict. The score must be calculated using the weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%).',
                 },
                 conciseDescription: {
                   type: 'string',
@@ -81,6 +94,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
               required: [
                 'analysis',
                 'is_suitable',
+                'suitabilityScore',
                 'conciseDescription',
                 'conciseSuited',
               ],
@@ -224,7 +238,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
   }
 
   async checkStatus(): Promise<boolean> {
-    const rabbitMqUrl = `http://localhost:15672`;
+    const rabbitMqUrl = `http://${this.configService.get<string>('general.rabbitmqUrl')}:15672`;
     const username = this.configService.get<string>(
       'secrets.rabbitmq.username',
     );

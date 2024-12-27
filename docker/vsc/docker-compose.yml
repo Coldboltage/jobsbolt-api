@@ -55,6 +55,17 @@ services:
   #     - rabbitmq
   #     - prometheus
 
+  # jobsboltworker:
+  #   image: coldbolt/jobsbolt-worker:latest
+  #   container_name: jobsbolt-worker
+  #   env_file:
+  #     - .env # Load application-specific environment variables from .env
+  #   depends_on:
+  #     - postgres
+  #     - rabbitmq
+  #     - prometheus
+  #     - jobsboltapi
+  
   # psql-tester:
   #   image: alpine
   #   container_name: psql-tester

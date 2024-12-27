@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  # Traefik Reverse Proxy Service
+  traefik:
+    image: traefik:v2.5
+    container_name: jobsbolt-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.le.acme.httpChallenge.entryPoint=http"
+      - "--certificatesresolvers.le.acme.email=your-email@example.com"
+      - "--certificatesresolvers.le.acme.storage=/acme.json"
+    ports:
+      - "80:80"    # HTTP (for Let's Encrypt to verify)
+      - "443:443"  # HTTPS
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"  # Allows Traefik to talk to Docker API
+      - "./acme.json:/acme.json"                      # For Let's Encrypt certificate storage
+    networks:
+      - jobsbolt_network
+
+  # Your other services (as defined earlier) with Traefik labels
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: jobsbolt-rabbit-local
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    networks:
+      - jobsbolt_network
+
+  postgres:
+    image: postgres
+    container_name: jobsbolt-postgres-local
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${TYPEORM_USERNAME}
+      POSTGRES_PASSWORD: ${TYPEORM_PASSWORD}
+      POSTGRES_DB: ${TYPEORM_DATABASE}
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - jobsbolt_network
+
+  prometheus:
+    image: prom/prometheus
+    container_name: jobsbolt-prometheus-local
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - jobsbolt_network
+
+  grafana:
+    image: grafana/grafana
+    container_name: jobsbolt-grafana-local
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - jobsbolt_network
+
+  jobsboltapi:
+    image: coldbolt/jobsbolt-api:dev-latest
+    container_name: jobsbolt-api-local
+    ports:
+      - "3000:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jobsboltapi.rule=Host(`jobsbolt.org`)"
+      - "traefik.http.services.jobsboltapi.loadbalancer.server.port=3000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+      - prometheus
+    networks:
+      - jobsbolt_network
+
+  jobsboltworker:
+    image: coldbolt/jobsbolt-worker:latest
+    container_name: jobsbolt-worker-local
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+      - prometheus
+      - jobsboltapi
+    networks:
+      - jobsbolt_network
+
+  jobsboltwebsite:
+    image: coldbolt/jobsbolt-website:main-latest
+    container_name: jobsbolt-website-local
+    ports:
+      - "1337:1337"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jobsboltwebsite.rule=Host(`jobsbolt.org`)"
+      - "traefik.http.services.jobsboltwebsite.loadbalancer.server.port=1337"
+    env_file:
+      - .env
+    depends_on:
+      - jobsboltapi
+      - postgres
+      - rabbitmq
+      - prometheus
+    networks:
+      - jobsbolt_network
+
+networks:
+  jobsbolt_network:
+    driver: bridge
+
+volumes:
+  grafana-storage:
+  acme.json:  # This is used to store Let's Encrypt certificates.
+    driver: local

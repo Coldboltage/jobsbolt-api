@@ -1,10 +1,18 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
   OnApplicationBootstrap,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, IsNull, Not, Repository } from 'typeorm';
+import {
+  DeepPartial,
+  In,
+  IsNull,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 import {
   CompleteJobParse,
   IndividualJobFromBatch,
@@ -22,6 +30,7 @@ import { DiscordService } from '../discord/discord.service';
 
 import { UtilsService } from '../utils/utils.service';
 import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
+import { ManualJobDto } from './dto/manual-job.dto';
 const path = require('path');
 const fs = require('fs');
 
@@ -93,6 +102,7 @@ export class JobService implements OnApplicationBootstrap {
     );
     const summary = content.analysis;
     const suited = content.is_suitable;
+    const suitabilityScore = content.suitabilityScore;
     const conciseDescription = content.conciseDescription;
     const conciseSuited = content.conciseSuited;
 
@@ -100,6 +110,7 @@ export class JobService implements OnApplicationBootstrap {
       indeedId,
       summary,
       suited,
+      suitabilityScore,
       conciseDescription,
       conciseSuited,
     };
@@ -107,7 +118,10 @@ export class JobService implements OnApplicationBootstrap {
     return object;
   }
 
-  async addJobsByBot(jobTypeId: string, scrappedJobs: JobInfoInterface[]) {
+  async addJobsByBot(
+    jobTypeId: string,
+    scrappedJobs: JobInfoInterface[],
+  ): Promise<void> {
     // // All jobs rekate to a jobType
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
     // Check which jobs exist already
@@ -147,7 +161,7 @@ export class JobService implements OnApplicationBootstrap {
         );
         returnupdatedExistingJobAndType.push(updatedExistingJobAndType);
       }
-      return returnupdatedExistingJobAndType;
+      // return returnupdatedExistingJobAndType;
     }
 
     const newJobs = scrappedJobs.filter((scrappedJob) => {
@@ -156,10 +170,12 @@ export class JobService implements OnApplicationBootstrap {
       });
     });
 
+    console.log(`Scrapped Jobs: ${scrappedJobs.length}`);
+    console.log(`New Jobs: ${newJobs.length}`);
+
     // Create all jobs
     for (const job of newJobs) {
       console.log('array for newJobs');
-      console.log(newJobs);
       const jobEntity = await this.jobRepository.save({
         indeedId: job.indeedId,
         link: `https://www.indeed.com/viewjob?jk=${job.indeedId}`,
@@ -173,9 +189,47 @@ export class JobService implements OnApplicationBootstrap {
         scannedLast: null,
         companyName: job.companyName,
       });
+      console.log(jobEntity);
       console.log(`${jobEntity.indeedId} added`);
-      return;
     }
+    return;
+  }
+
+  async addJobManually(manualJobDto: ManualJobDto): Promise<Job> {
+    const checkJobLink = await this.jobRepository.findOne({
+      where: {
+        jobType: {
+          id: manualJobDto.jobTypeId,
+        },
+        link: manualJobDto.link,
+      },
+      relations: {
+        jobType: true,
+      },
+    });
+
+    if (checkJobLink) {
+      throw new ConflictException('job_already_exists');
+    }
+
+    console.log(checkJobLink);
+
+    const jobEntity = await this.jobTypeService.findOne(manualJobDto.jobTypeId);
+
+    return this.jobRepository.save({
+      indeedId: manualJobDto.indeedId,
+      link: manualJobDto.link,
+      name: manualJobDto.name,
+      date: new Date(),
+      description: manualJobDto.description,
+      pay: manualJobDto.pay,
+      location: manualJobDto.location,
+      suited: false,
+      jobType: [jobEntity],
+      scannedLast: null,
+      companyName: manualJobDto.companyName,
+      manual: true,
+    });
   }
 
   async scanAvailableJobs(): Promise<Job[]> {
@@ -193,13 +247,30 @@ export class JobService implements OnApplicationBootstrap {
     return jobs;
   }
 
-  async sendDiscordNewJobMessage() {
-    const users = await this.userService.findAllUserUnsendJobs();
+  async sendDiscordNewJobMessage(): Promise<void> {
+    const users = await this.userService.findUsersWithUnsendSuitableJobs();
     console.log(users);
     for (const user of users) {
-      const allJobs = await this.sendUserNewJobs(user.id);
-      await this.discordService.sendMessage(user.discordId, allJobs);
+      const bestJobs = await this.findUsersBestFiveJobs(user.id);
+      const manualJobs = await this.findUserManualJobs(user.id);
+      const allJobs = [...bestJobs, ...manualJobs];
+      allJobs.forEach((job) => (job.notification = true));
+      await this.jobRepository.save(allJobs);
+      if (user.discordId) {
+        this.discordService.sendMessage(user.discordId, allJobs);
+      }
     }
+  }
+
+  async sendDiscordNewJobMessageToUser(id: string): Promise<void> {
+    const allJobs = await this.findUsersBestFiveJobs(id);
+    allJobs.forEach((job) => (job.notification = true));
+    await this.jobRepository.save(allJobs);
+    if (allJobs.length === 0 || !allJobs[0].jobType[0].user.discordId) return;
+    this.discordService.sendMessage(
+      allJobs[0].jobType[0].user.discordId,
+      allJobs,
+    );
   }
 
   async findAll() {
@@ -209,8 +280,10 @@ export class JobService implements OnApplicationBootstrap {
   async findOne(jobId: string) {
     return this.jobRepository.findOne({
       relations: {
-        jobType: true,
         coverLetter: true,
+        jobType: {
+          user: true,
+        },
       },
       where: {
         id: jobId,
@@ -218,7 +291,7 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
-  async findAllSuitableJobs(userId: string) {
+  async findAllSuitableJobs(id: string) {
     const allSuitedJobs = await this.jobRepository.find({
       relations: {
         jobType: {
@@ -228,7 +301,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         suited: true,
@@ -237,7 +310,7 @@ export class JobService implements OnApplicationBootstrap {
     return allSuitedJobs;
   }
 
-  async findAllUserUnsendJobs(userId: string): Promise<Job[]> {
+  async findAllUserUnsendJobs(id: string): Promise<Job[]> {
     const allJobsToSend = await this.jobRepository.find({
       relations: {
         jobType: {
@@ -247,7 +320,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         suited: true,
@@ -257,7 +330,7 @@ export class JobService implements OnApplicationBootstrap {
     return allJobsToSend;
   }
 
-  async findAllAppliedJobs(userId: string, state: boolean) {
+  async findAllAppliedJobs(id: string, state: boolean) {
     return this.jobRepository.find({
       relations: {
         jobType: {
@@ -268,16 +341,17 @@ export class JobService implements OnApplicationBootstrap {
         applied: state,
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
       },
     });
   }
 
-  async findAllCoverLetterToApply(userId: string): Promise<DeepPartial<Job[]>> {
+  async findAllCoverLetterToApply(id: string): Promise<DeepPartial<Job[]>> {
     const jobsToApplyEntity = await this.jobRepository.find({
       where: {
+        interested: true,
         applied: false,
         suited: true,
         coverLetter: {
@@ -286,7 +360,7 @@ export class JobService implements OnApplicationBootstrap {
         },
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
       },
@@ -295,15 +369,6 @@ export class JobService implements OnApplicationBootstrap {
         jobType: {
           user: true,
         },
-      },
-      select: {
-        link: true,
-        applied: true,
-        coverLetter: {
-          generatedCoverLetter: true,
-          userPitch: true,
-        },
-        jobType: false,
       },
     });
     if (!jobsToApplyEntity || jobsToApplyEntity.length === 0)
@@ -317,14 +382,130 @@ export class JobService implements OnApplicationBootstrap {
     return result;
   }
 
-  async sendUserNewJobs(userId: string) {
-    const allJobsToSend = await this.findAllUserUnsendJobs(userId);
+  async sendUserNewJobs(id: string) {
+    const allJobsToSend = await this.findAllUserUnsendJobs(id);
     allJobsToSend.forEach((job) => (job.notification = true));
     await this.jobRepository.save(allJobsToSend);
     return allJobsToSend;
   }
 
-  async resetFalse(userId: string) {
+  async findUsersBestFiveJobs(id): Promise<Job[]> {
+    return this.jobRepository.find({
+      order: {
+        suitabilityScore: 'DESC',
+      },
+      take: 5,
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: id,
+          },
+        },
+        suitabilityScore: MoreThanOrEqual(85),
+        suited: true,
+        notification: false,
+      },
+    });
+  }
+
+  async findUserManualJobs(id): Promise<Job[]> {
+    return this.jobRepository.find({
+      order: {
+        suitabilityScore: 'DESC',
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: id,
+          },
+        },
+        manual: true,
+        notification: false,
+      },
+    });
+  }
+
+  async jobInterestState(id, jobId, interestedState): Promise<Job> {
+    const jobEntity = await this.jobRepository.findOne({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: id,
+          },
+        },
+        id: jobId,
+      },
+    });
+    jobEntity.interested = interestedState;
+    return this.jobRepository.save(jobEntity);
+  }
+
+  async findAllJobsNotifiedPendingInterest(id: string): Promise<Job[]> {
+    return this.jobRepository.find({
+      where: {
+        notification: true,
+        interested: IsNull(),
+        applied: false,
+        jobType: {
+          user: {
+            id: id,
+          },
+        },
+        coverLetter: {
+          generatedCoverLetter: null,
+        },
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+        coverLetter: true,
+      },
+    });
+  }
+
+  async findAllInterestedJobsByUser(id: string): Promise<Job[]> {
+    return this.jobRepository.find({
+      where: {
+        notification: true,
+        suited: true,
+        interested: true,
+        applied: false,
+        jobType: {
+          user: {
+            id: id,
+          },
+        },
+        coverLetter: {
+          generatedCoverLetter: IsNull(),
+          userPitch: IsNull(),
+        },
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+        coverLetter: true,
+      },
+    });
+  }
+
+  async resetFalse(id: string) {
     const allFalseJobs = await this.jobRepository.find({
       relations: {
         jobType: {
@@ -334,7 +515,7 @@ export class JobService implements OnApplicationBootstrap {
       where: {
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
         suited: false,
@@ -352,6 +533,7 @@ export class JobService implements OnApplicationBootstrap {
       {
         summary: completeJob.summary,
         suited: completeJob.suited,
+        suitabilityScore: completeJob.suitabilityScore,
         conciseDescription: completeJob.conciseDescription,
         scannedLast: new Date(),
         conciseSuited: completeJob.conciseSuited,
@@ -360,7 +542,7 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   async updateJobApplication(
-    userId: string,
+    id: string,
     indeedId: string,
     status: boolean,
   ) {
@@ -374,7 +556,7 @@ export class JobService implements OnApplicationBootstrap {
         indeedId,
         jobType: {
           user: {
-            id: userId,
+            id: id,
           },
         },
       },
