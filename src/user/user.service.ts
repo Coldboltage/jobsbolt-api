@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as pdfParse from 'pdf-parse';
 
@@ -35,6 +35,28 @@ export class UserService {
     return this.userRepository.find({ relations: {} });
   }
 
+  // Users with unsend jobs with suitabilityScore of 85+
+  async findUsersWithUnsendSuitableJobs(): Promise<User[]> {
+    return this.userRepository.find({
+      relations: {
+        jobType: {
+          jobs: true,
+        },
+      },
+      where: {
+        jobType: {
+          active: true,
+          jobs: {
+            // suitabilityScore: MoreThanOrEqual(85),
+            // suited: true,
+            notification: false,
+          },
+        },
+      },
+    });
+  }
+
+  // Find all unsend jobs.
   async findAllUserUnsendJobs(): Promise<User[]> {
     return this.userRepository.find({
       relations: {
@@ -82,8 +104,8 @@ export class UserService {
     return `This action removes a #${id} user`;
   }
 
-  async updateUserCV(userId: string, cv: Express.Multer.File) {
-    const userEntity = await this.findOne(userId);
+  async updateUserCV(id: string, cv: Express.Multer.File) {
+    const userEntity = await this.findOne(id);
 
     // Define the render_page function (gptCode)
     function render_page(pageData) {

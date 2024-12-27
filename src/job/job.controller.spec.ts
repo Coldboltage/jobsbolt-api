@@ -6,8 +6,14 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Job } from './entities/job.entity';
+import {
+  Job,
+  JobInfoInterface,
+  ManualJobInfoInterface,
+} from './entities/job.entity';
 import { faker } from '@faker-js/faker';
+import { JobType } from '../job-type/entities/job-type.entity';
+import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
 
 describe('JobController', () => {
   let controller: JobController;
@@ -265,6 +271,174 @@ describe('JobController', () => {
       // Assert
       await expect(result).rejects.toThrow('no_cover_letters_ready');
       expect(findAllCoverLetterToApplySpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('sendDiscordNewJobMessage', () => {
+    it('should send a new job discord message', async () => {
+      // Arrange
+      const sendDiscordNewJobMessageSpy = jest.spyOn(
+        service,
+        'sendDiscordNewJobMessage',
+      );
+      // Act
+      await controller.sendDiscordNewJobMessage();
+      // Assert
+      expect(sendDiscordNewJobMessageSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('sendDiscordNewJobMessageToUser', () => {
+    it('should fire the SendDiscordNewJobMessageToUser', async () => {
+      // Arrange
+      const mockReq = {
+        user: {
+          id: faker.string.uuid(),
+        },
+      };
+      const sendDiscordNewJobMessageToUserSerivceSpy = jest.spyOn(
+        service,
+        'sendDiscordNewJobMessageToUser',
+      );
+      // Act
+      await controller.sendDiscordNewJobMessageToUser(mockReq);
+      // Assert
+      expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalled();
+      expect(sendDiscordNewJobMessageToUserSerivceSpy).toHaveBeenCalledWith(
+        mockReq.user.id,
+      );
+    });
+  });
+
+  describe('findAllJobsNotifiedPendingInterest', () => {
+    it('should fire the findAllJobsNotifiedPendingInterest service', async () => {
+      // Arrange
+      const reqMock = {
+        user: {
+          id: faker.string.uuid(),
+        },
+      };
+
+      const findAllJobsNotifiedPendingInterestSpy = jest.spyOn(
+        service,
+        'findAllJobsNotifiedPendingInterest',
+      );
+
+      // Act
+      await controller.findAllJobsNotifiedPendingInterest(reqMock);
+      // Assert
+
+      expect(findAllJobsNotifiedPendingInterestSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('jobInterestState', () => {
+    it('should fire jobInterestState service', async () => {
+      // Arrange
+      const reqMock = {
+        user: {
+          id: faker.string.uuid(),
+        },
+      };
+
+      const mockJobId = faker.string.uuid();
+      const mockInterestedState = true;
+
+      const jobInterestStateSpy = jest
+        .spyOn(service, 'jobInterestState')
+        .mockResolvedValueOnce(new Job());
+
+      // Act
+      const response = await controller.jobInterestState(
+        reqMock,
+        mockJobId,
+        mockInterestedState,
+      );
+
+      // Assert
+      expect(jobInterestStateSpy).toHaveBeenCalled();
+      expect(response instanceof Job).toEqual(true);
+    });
+  });
+
+  describe('findAllInterestedJobsByUser', () => {
+    it('should fire the findAllInterestedJobsByUser service', async () => {
+      // Arrange
+      const reqMock = {
+        user: {
+          id: faker.string.uuid(),
+        },
+      };
+
+      const findAllInterestedJobsByUserSpy = jest.spyOn(
+        service,
+        'findAllInterestedJobsByUser',
+      );
+
+      // Act
+      await controller.findAllInterestedJobsByUser(reqMock);
+      // Assert
+
+      expect(findAllInterestedJobsByUserSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('addJobManually', () => {
+    it('should add a job manually', async () => {
+      // Arrange
+
+      const mockJobType = new JobType();
+      mockJobType.id = faker.string.uuid();
+
+      const mockJob: ManualJobInfoInterface = {
+        indeedId: faker.string.uuid(),
+        jobTypeId: mockJobType.id,
+        name: faker.person.jobTitle(),
+        description: faker.lorem.paragraph(),
+        pay: '40000',
+        location: faker.location.streetAddress(),
+        companyName: faker.company.name(),
+        manual: true,
+        link: faker.internet.url(),
+      };
+
+      const savedMockJob: Job = {
+        id: faker.string.uuid(),
+        indeedId: mockJob.indeedId,
+        applied: false,
+        link: mockJob.link,
+        name: mockJob.name,
+        companyName: mockJob.companyName,
+        date: faker.date.anytime(),
+        description: mockJob.description,
+        pay: mockJob.pay,
+        location: mockJob.location,
+        summary: null,
+        conciseDescription: null,
+        conciseSuited: null,
+        suited: false,
+        suitabilityScore: null,
+        jobType: [mockJobType],
+        scannedLast: null,
+        notification: false,
+        interested: false,
+        manual: mockJob.manual,
+        coverLetter: null,
+      };
+
+      // Get the data
+      // Send the data
+
+      const saveJobSpy = jest
+        .spyOn(service, 'addJobManually')
+        .mockResolvedValueOnce(savedMockJob);
+
+      // Act
+      const result = await controller.addJobManually(mockJob);
+      // Assert
+      expect(result).toEqual(savedMockJob);
+      expect(saveJobSpy).toHaveBeenCalled();
+      expect(saveJobSpy).toHaveBeenCalledWith(mockJob);
     });
   });
 });

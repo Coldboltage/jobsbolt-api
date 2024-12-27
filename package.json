@@ -15,6 +15,7 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest --config ./package.json --runInBand",
+    "test:fail": "jest --config ./package.json --runInBand --silent",
     "test:watch": "jest --watch --config ./package.json",
     "test:cov": "jest --coverage --config ./package.json",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --config ./package.json",

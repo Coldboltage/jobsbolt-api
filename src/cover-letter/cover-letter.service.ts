@@ -7,7 +7,7 @@ import {
   CoverLetter,
   ParsedJobContent,
 } from './entities/cover-letter.entity';
-import { IsNull, Not, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 import { JobService } from '../job/job.service';
 import { UtilsService } from '../utils/utils.service';
 import { BatchStatusEnum, BatchType } from '../batch/entity/batch.entity';
@@ -78,6 +78,12 @@ export class CoverLetterService {
 
     if (jobEntity.coverLetter !== null)
       throw new ConflictException('cover_letter_already_exists');
+
+    await this.jobService.jobInterestState(
+      jobEntity.jobType[0].user.id,
+      jobEntity.id,
+      true,
+    );
 
     return this.coverLetterRepository.save({
       userPitch: createCoverLetterDto.userPitch,
@@ -170,6 +176,37 @@ export class CoverLetterService {
 
   update(id: number, updateCoverLetterDto: UpdateCoverLetterDto) {
     return `This action updates a #${id} coverLetter`;
+  }
+
+  async resetCvs(id: string, cvIds: string[]): Promise<CoverLetter[]> {
+    const listOfCvs = await this.coverLetterRepository.find({
+      relations: {
+        job: {
+          jobType: {
+            user: true,
+          },
+        },
+      },
+      where: {
+        job: {
+          jobType: {
+            user: {
+              id: id,
+            },
+          },
+        },
+        generatedCoverLetter: Not(IsNull()),
+        batch: true,
+        id: In(cvIds),
+      },
+    });
+
+    listOfCvs.forEach((cv) => {
+      cv.generatedCoverLetter = null;
+      cv.batch = false;
+    });
+
+    return this.coverLetterRepository.save(listOfCvs);
   }
 
   /**

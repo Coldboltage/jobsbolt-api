@@ -79,6 +79,7 @@ describe('UtilsService', () => {
     mockJob.scannedLast = null;
     mockJob.notification = false;
     mockJob.coverLetter = new CoverLetter();
+    mockJob.suitabilityScore = 95;
 
     // Create an instance of JobType
     const mockJobTypeEntity = new JobType();
@@ -128,11 +129,11 @@ describe('UtilsService', () => {
       method: 'POST',
       url: '/v1/chat/completions',
       body: {
-        model: 'gpt-4o-2024-08-06',
+        model: 'gpt-4o-2024-11-20',
         messages: [
           {
             role: 'system',
-            content: `You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate. We want to make sure the text is not AI detectable`,
+            content: `You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate. We want to make sure the text is not AI detectable. It is extremely important to make sure the candidate and their filters which can be idenfied in their initial message is honoured as we wish not to state jobs are suited if the user has no interest in said job via their message`,
           },
           { role: 'user', content: expect.any(String) },
         ],
@@ -147,12 +148,17 @@ describe('UtilsService', () => {
                 analysis: {
                   type: 'string',
                   description:
-                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
+                    "The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the user's wishes be met. If they say they could do something, good. If the candidate says they are not interested in something, then we need to honor this. You must be very strict. Weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%). Use these weights to structure the analysis.",
                 },
                 is_suitable: {
                   type: 'boolean',
                   description:
-                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
+                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided. This should be very strict.',
+                },
+                suitabilityScore: {
+                  type: 'number',
+                  description:
+                    'A whole number from 0 to 100 indicating the suitability of the candidate for the job. Higher means more suitable. This should be very strict. The score must be calculated using the weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%).',
                 },
                 conciseDescription: {
                   type: 'string',
@@ -166,6 +172,7 @@ describe('UtilsService', () => {
               required: [
                 'analysis',
                 'is_suitable',
+                'suitabilityScore',
                 'conciseDescription',
                 'conciseSuited',
               ],
@@ -265,6 +272,10 @@ describe('UtilsService', () => {
       );
       expect(response).toContain(
         `The CV helps but the description gives a more recent telling of what the user is thinking.`,
+      );
+      expect(response).toContain(`The job type description is as follows:`);
+      expect(response).toContain(
+        `This serves to further refine the search, specifying particular criteria for the type of job being sought.`,
       );
     });
   });
@@ -427,60 +438,7 @@ describe('UtilsService', () => {
     // });
 
     const { mockJob } = createFullUserWithDetails();
-    const jsonLayout = {
-      custom_id: mockJob.indeedId,
-      method: 'POST',
-      url: '/v1/chat/completions',
-      body: {
-        model: 'gpt-4o-2024-08-06',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a helpful and experienced career advisor. Your task is to analyze job descriptions and compare them with candidate resumes. Provide feedback on how well the candidate fits the job, identify key strengths and gaps, and give a recommendation on whether the job is a good match for the candidate.',
-          },
-          { role: 'user', content: expect.any(String) },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'job_analysis_schema',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                analysis: {
-                  type: 'string',
-                  description:
-                    'The analysis of how well the candidate fits the job description. This should consider both current qualifications and potential for growth. Location matters a lot. If the job requires to move continent, that might be problematic. See the user description if provided.',
-                },
-                is_suitable: {
-                  type: 'boolean',
-                  description:
-                    'A boolean indicating if the candidate is a good match for the job, based on the analysis provided.',
-                },
-                conciseDescription: {
-                  type: 'string',
-                  description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
-                },
-                conciseSuited: {
-                  type: 'string',
-                  description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
-                },
-              },
-              required: [
-                'analysis',
-                'is_suitable',
-                'conciseDescription',
-                'conciseSuited',
-              ],
-              additionalProperties: false,
-            },
-          },
-        },
-        max_tokens: 1000,
-      },
-    };
+    const jsonLayout = createMockJobJsonLayout(mockJob);
 
     it('Create OpenAI Batch Request', async () => {
       // Arrange
@@ -542,6 +500,9 @@ describe('UtilsService', () => {
   describe('checkStatus', () => {
     it('should return true if all messages are completed', async () => {
       // Arrange
+      const rabbitMqUrlSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('rabbitmq');
       const userConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce('username');
@@ -562,6 +523,7 @@ describe('UtilsService', () => {
       // Assert
       expect(response).toEqual(true);
       expect(userConfigServiceSpy).toHaveBeenCalled();
+      expect(rabbitMqUrlSpy).toHaveBeenCalled();
       expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith('No more messages');
@@ -569,6 +531,9 @@ describe('UtilsService', () => {
 
     it('should return false if all messages are completed', async () => {
       // Arrange
+      const rabbitMqUrlSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('rabbitmq');
       const userConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce('username');
@@ -587,6 +552,9 @@ describe('UtilsService', () => {
       const response = await service.checkStatus();
 
       // Assert
+      expect(userConfigServiceSpy).toHaveBeenCalled();
+      expect(rabbitMqUrlSpy).toHaveBeenCalled();
+      expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
       expect(response).toEqual(false);
       expect(consoleSpy).toHaveBeenCalledWith(
         'Still a message being processed',
@@ -595,6 +563,9 @@ describe('UtilsService', () => {
 
     it('should return false if error in axios call', async () => {
       // Arrange
+      const rabbitMqUrlSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('rabbitmq');
       const userConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce('username');
@@ -613,6 +584,7 @@ describe('UtilsService', () => {
 
       // Assert
       expect(response).toEqual(false);
+      expect(rabbitMqUrlSpy).toHaveBeenCalled();
       expect(userConfigServiceSpy).toHaveBeenCalled();
       expect(userPasswordConfigServiceSpy).toHaveBeenCalled();
     });
@@ -622,6 +594,9 @@ describe('UtilsService', () => {
       const mockUsername = faker.internet.userName();
       const mockPassword = faker.internet.password();
 
+      const rabbitMqUrlSpy = jest
+        .spyOn(configService, 'get')
+        .mockReturnValueOnce('rabbitmq');
       const userConfigServiceSpy = jest
         .spyOn(configService, 'get')
         .mockReturnValueOnce(mockUsername);
@@ -638,6 +613,7 @@ describe('UtilsService', () => {
       const response = await service.checkStatus();
 
       // Assert
+      expect(rabbitMqUrlSpy).toHaveBeenCalledWith('general.rabbitmqUrl');
       expect(userConfigServiceSpy).toHaveBeenCalledWith(
         'secrets.rabbitmq.username',
       );
@@ -645,7 +621,7 @@ describe('UtilsService', () => {
         'secrets.rabbitmq.password',
       );
       expect(axiosSpy).toHaveBeenCalledWith(
-        `http://localhost:15672/api/queues/%2F/jobs_queue`,
+        `http://rabbitmq:15672/api/queues/%2F/jobs_queue`,
         {
           auth: {
             username: mockUsername,

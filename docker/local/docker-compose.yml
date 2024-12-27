@@ -3,10 +3,10 @@ version: '3.8'
 services:
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: jobsbolt-rabbit
+    container_name: jobsbolt-rabbit-local
     ports:
-      - '5672:5672'
-      - '15672:15672'
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -14,10 +14,11 @@ services:
       - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
 
   postgres:
-    image: postgres:13
-    container_name: jobsbolt-postgres
+    image: postgres
+    restart: always
+    container_name: jobsbolt-postgres-local
     ports:
-      - '5432:5432'
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${TYPEORM_USERNAME}
       POSTGRES_PASSWORD: ${TYPEORM_PASSWORD}
@@ -27,27 +28,28 @@ services:
 
   prometheus:
     image: prom/prometheus
-    container_name: jobsbolt-prometheus
+    container_name: jobsbolt-prometheus-local
     ports:
-      - '9090:9090'
+      - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
     image: grafana/grafana
-    container_name: jobsbolt-grafana
+    container_name: jobsbolt-grafana-local
     ports:
-      - '3001:3000' # Grafana is exposed on port 3000 internally, use 3001 for host access to avoid conflicts
+      - "3001:3000"
     depends_on:
       - prometheus
     volumes:
       - grafana-storage:/var/lib/grafana
 
   jobsboltapi:
-    image: coldbolt/jobsbolt-api:local-latest
-    container_name: jobsbolt-api
+    image: coldbolt/jobsbolt-api:dev-latest
+    pull_policy: always
+    container_name: jobsbolt-api-local
     ports:
-      - '3000:3000'
+      - "3000:3000"
     env_file:
       - .env # Load application-specific environment variables from .env
     depends_on:
@@ -55,10 +57,43 @@ services:
       - rabbitmq
       - prometheus
 
-  psql-tester:
-    image: alpine
-    container_name: psql-tester
-    entrypoint: sh -c "while true; do sleep 3600; done"
+  jobsboltworker:
+    image: coldbolt/jobsbolt-worker:latest
+    container_name: jobsbolt-worker-local
+    pull_policy: always
+    env_file:
+      - .env # Load application-specific environment variables from .env
+    depends_on:
+      - postgres
+      - rabbitmq
+      - prometheus
+      - jobsboltapi
+
+  jobsboltwebsite:
+      image: coldbolt/jobsbolt-website:dev-latest
+      # build:
+      #   context: "C:/Users/aland/Documents/projects/jobsbolt/jobsbolt-website" # Absolute path to jobsbolt-website
+      #   dockerfile: "C:/Users/aland/Documents/projects/jobsbolt/jobsbolt-website/Dockerfile" # Absolute path to Dockerfile
+      #   args:
+      #     NEXT_PUBLIC_SERVER_API_URL: ${NEXT_PUBLIC_SERVER_API_URL} # Pass from .env or manually
+      #     NEXT_PUBLIC_CLIENT_API_URL: ${NEXT_PUBLIC_CLIENT_API_URL} # Pass from .env or manually
+      pull_policy: always
+      container_name: jobsbolt-website-local
+      ports:
+        - "1337:1337"                                 
+      env_file:
+        - .env                                 
+      depends_on:
+        - jobsboltapi                                  
+        - postgres
+        - rabbitmq
+        - prometheus
+
+  
+  # psql-tester:
+  #   image: alpine
+  #   container_name: psql-tester
+  #   entrypoint: sh -c "while true; do sleep 3600; done"
 
 volumes:
   grafana-storage: # Persistent storage for Grafana dashboards and setting

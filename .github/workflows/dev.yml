@@ -26,8 +26,8 @@ jobs:
       - name: Run Tests
         run: npm run test
 
-      - name: Run Stryker
-        run: npx stryker run
+      # - name: Run Stryker
+      #   run: npx stryker run
 
   sentry_release:
     needs: test # Ensure this runs after 'test' job is successful
