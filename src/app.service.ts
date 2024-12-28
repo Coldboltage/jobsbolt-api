@@ -23,7 +23,7 @@ export class AppService implements OnApplicationBootstrap {
     return 'Hello World!';
   }
 
-  @Cron('0 */12 * * *')
+  @Cron('0 12 * * *')
   async fullRun() {
     await this.jobTypeService.checkNewJobs();
     const checkInterval = setInterval(async () => {
