@@ -27,7 +27,7 @@ services:
   # Your other services (as defined earlier) with Traefik labels
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: jobsbolt-rabbit-local
+    container_name: jobsbolt-rabbit-main
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -41,7 +41,7 @@ services:
 
   postgres:
     image: postgres
-    container_name: jobsbolt-postgres-local
+    container_name: jobsbolt-postgres-main
     ports:
       - "5432:5432"
     environment:
@@ -55,7 +55,7 @@ services:
 
   prometheus:
     image: prom/prometheus
-    container_name: jobsbolt-prometheus-local
+    container_name: jobsbolt-prometheus-main
     ports:
       - "9090:9090"
     volumes:
@@ -65,7 +65,7 @@ services:
 
   grafana:
     image: grafana/grafana
-    container_name: jobsbolt-grafana-local
+    container_name: jobsbolt-grafana-main
     ports:
       - "3001:3000"
     depends_on:
@@ -76,8 +76,9 @@ services:
       - jobsbolt_network
 
   jobsboltapi:
-    image: coldbolt/jobsbolt-api:dev-latest
-    container_name: jobsbolt-api-local
+    image: coldbolt/jobsbolt-api:main-latest
+    pull_policy: always
+    container_name: jobsbolt-api-main
     ports:
       - "3000:3000"
     labels:
@@ -95,7 +96,8 @@ services:
 
   jobsboltworker:
     image: coldbolt/jobsbolt-worker:latest
-    container_name: jobsbolt-worker-local
+    pull_policy: always
+    container_name: jobsbolt-worker-main
     env_file:
       - .env
     depends_on:
@@ -108,7 +110,8 @@ services:
 
   jobsboltwebsite:
     image: coldbolt/jobsbolt-website:main-latest
-    container_name: jobsbolt-website-local
+    pull_policy: always
+    container_name: jobsbolt-website-main
     ports:
       - "1337:1337"
     labels:
@@ -133,4 +136,4 @@ networks:
 volumes:
   grafana-storage:
   acme.json:  # This is used to store Let's Encrypt certificates.
-    driver: local
+    driver: main
