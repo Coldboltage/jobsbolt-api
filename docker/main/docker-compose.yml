@@ -83,8 +83,10 @@ services:
       - "3000:3000"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.jobsboltapi.rule=Host(`jobsbolt.org`)"
-      - "traefik.http.services.jobsboltapi.loadbalancer.server.port=3000"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
+      - "traefik.http.middlewares.api-strip.stripprefix.prefixes=/api"
+      - "traefik.http.routers.api.middlewares=api-strip"
+      - "traefik.http.services.api.loadbalancer.server.port=3000" # Ensure this matches the port your NestJS app runs on
     env_file:
       - .env
     depends_on:
