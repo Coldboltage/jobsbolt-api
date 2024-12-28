@@ -11,9 +11,10 @@ async function bootstrap() {
   });
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb' }));
+  app.setGlobalPrefix('api');
 
   const configService = app.get(ConfigService);
-  const websiteUrl = configService.get('general.websiteUrl')
+  const websiteUrl = configService.get('general.websiteUrl');
 
   app.enableCors({
     // origin: `http://${websiteUrl}:1337`, // Only allow requests from this URL
@@ -28,7 +29,6 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allow JWTs, etc.
     credentials: true, // Required to allow cookies and credentials
-
   });
 
   const config = new DocumentBuilder()
