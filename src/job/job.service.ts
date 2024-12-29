@@ -125,6 +125,8 @@ export class JobService implements OnApplicationBootstrap {
     scrappedJobs: JobInfoInterface[],
   ): Promise<void> {
     // // All jobs rekate to a jobType
+    console.log(jobTypeId)
+    console.log(scrappedJobs.length)
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
     // Check which jobs exist already
     const allJobsIds = scrappedJobs.map((scrappedJob) => scrappedJob.indeedId);
