@@ -66,8 +66,10 @@ export class JobService implements OnApplicationBootstrap {
     newJobs.forEach((job) => (job.scannedLast = new Date()));
 
     if (!newJobs || newJobs.length === 0) {
+      console.log("no new jobs")
       return null;
     }
+    console.log("new jobs found adding them")
     const updatedNewJobs = await this.jobRepository.save(newJobs);
 
     await this.utilService.buildJsonLd(updatedNewJobs, 'job');

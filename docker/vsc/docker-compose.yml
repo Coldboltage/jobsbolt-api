@@ -24,6 +24,17 @@ services:
       POSTGRES_DB: ${TYPEORM_DATABASE}
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+    labels:
+      - "pgbackup.enable=true"
+
+  pgbackup:
+    image: justb4/pgbackup:11
+    container_name: pg_backup
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./backups:/backup # Host directory to store backups
+    environment:
+      - PGB_SCHEDULE=36 10 * * * # Backup every day at 11 PM
 
   prometheus:
     image: prom/prometheus
