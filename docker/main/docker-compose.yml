@@ -97,6 +97,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=le"
       - "traefik.http.services.api.loadbalancer.server.port=3000" # Ensure this matches the port your NestJS app runs on
     env_file:
       - .env
