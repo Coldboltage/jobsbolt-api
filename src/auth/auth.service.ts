@@ -59,11 +59,16 @@ export class AuthService {
     const tokenValidity = await this.jwtService.verifyAsync(reset_token);
     if (!tokenValidity)
       throw new UnauthorizedException('reset_token_not_valid');
-    const email = this.jwtService.decode<{ reset_token: string }>(reset_token);
-    return email.reset_token;
+    const { email } = this.jwtService.decode<{ email: string }>(reset_token);
+    return email;
   }
 
-  async resetPassword(email: string, password: string): Promise<void> {
+  async resetPassword(
+    email: string,
+    password: string,
+    reset_token: string,
+  ): Promise<void> {
+    await this.checkResetToken(reset_token);
     const user = await this.userService.findOneByEmail(email);
     const saltOrRounds = 10;
 

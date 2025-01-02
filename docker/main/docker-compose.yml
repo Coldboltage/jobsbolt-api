@@ -10,9 +10,11 @@ services:
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.le.acme.httpChallenge.entryPoint=http"
-      - "--certificatesresolvers.le.acme.email=your-email@example.com"
+      - "--certificatesresolvers.le.acme.httpChallenge.entryPoint=web" # Change from 'http' to 'web'
+      - "--certificatesresolvers.le.acme.email=admin@jobsbolt.org"
       - "--certificatesresolvers.le.acme.storage=/acme.json"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure" # Optional: Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     ports:
       - "80:80"    # HTTP (for Let's Encrypt to verify)
       - "443:443"  # HTTPS
@@ -128,8 +130,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jobsboltwebsite.rule=Host(`jobsbolt.org`) && !PathPrefix(`/api`)"
-      - "traefik.http.routers.jobsboltwebsite.entrypoints=web"
       - "traefik.http.services.jobsboltwebsite.loadbalancer.server.port=1337"
+      - "traefik.http.routers.jobsboltwebsite.entrypoints=websecure"
+      - "traefik.http.routers.jobsboltwebsite.tls.certresolver=le"
     env_file:
       - .env
     depends_on:

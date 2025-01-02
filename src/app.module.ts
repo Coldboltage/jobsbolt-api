@@ -27,6 +27,7 @@ import { validateSeederEnv } from './config/seed/seed.schema';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { APP_FILTER } from '@nestjs/core';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { APP_FILTER } from '@nestjs/core';
     UtilsModule,
     SeederModule,
     PrometheusModule.register(),
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [
