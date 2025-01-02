@@ -54,6 +54,14 @@ services:
     volumes:
       - grafana-storage:/var/lib/grafana
 
+  postfix:
+    image: instrumentisto/postfix
+    container_name: postfix
+    ports: "25:25"
+    env_file:
+      - .env
+
+
   # jobsboltapi:
   #   image: coldbolt/jobsbolt-api:dev-latest
   #   container_name: jobsbolt-api

@@ -17,16 +17,14 @@ export class AppController {
 
   @UseGuards(LocalAuthGuard)
   @Post('auth/login')
-  async login(@Request() req, @Res({ passthrough: true }) res: Response,
-  ) {
-
+  async login(@Request() req, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(req.user);
     res.cookie('jwt', result.access_token, {
       httpOnly: true, // Prevents JavaScript access (more secure)
       // maxAge: 60 * 60 * 1000, // 1 hour
       path: '/', // Cookie available site-wide
     });
-    return result
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)

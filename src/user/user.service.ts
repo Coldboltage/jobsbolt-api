@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as pdfParse from 'pdf-parse';
 
@@ -94,6 +94,11 @@ export class UserService {
     } else {
       throw new NotFoundException('email_address_not_found');
     }
+  }
+
+  async updatePassword(user: User, newPassword: string): Promise<void> {
+    user.password = newPassword;
+    await this.userRepository.save(user);
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
