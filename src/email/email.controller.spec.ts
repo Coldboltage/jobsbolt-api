@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailController } from './email.controller';
+import { createMock } from '@golevelup/ts-jest';
 
 describe('EmailController', () => {
   let controller: EmailController;
@@ -7,7 +8,9 @@ describe('EmailController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EmailController],
-    }).compile();
+    }).useMocker(createMock)
+      .compile();
+
 
     controller = module.get<EmailController>(EmailController);
   });
