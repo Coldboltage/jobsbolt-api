@@ -7,5 +7,6 @@ import { MailerModule } from '@nestjs-modules/mailer';
   imports: [MailerModule],
   providers: [EmailService],
   controllers: [EmailController],
+  exports: [EmailService]
 })
 export class EmailModule { }

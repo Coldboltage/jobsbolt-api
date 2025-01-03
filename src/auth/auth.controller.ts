@@ -19,7 +19,6 @@ export class AuthController {
   @Post('reset-password/')
   resetPassword(@Body() createNewPasswordDto: CreateNewPasswordDto) {
     return this.authService.resetPassword(
-      createNewPasswordDto.email,
       createNewPasswordDto.newPassword,
       createNewPasswordDto.reset_token,
     );

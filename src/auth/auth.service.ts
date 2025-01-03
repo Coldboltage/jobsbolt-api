@@ -3,12 +3,14 @@ import { UserService } from '../user/user.service';
 import * as bcrypt from 'bcrypt';
 import { SlimUser } from '../user/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private emailService: EmailService
   ) { }
 
   async validateUser(email: string, pass: string): Promise<SlimUser> {
@@ -43,16 +45,18 @@ export class AuthService {
   async sendResetToken(email: string): Promise<void> {
     // check email
     await this.userService.findOneByEmail(email);
+    const token = {
+      reset_token: this.jwtService.sign(
+        { email },
+        {
+          expiresIn: '60m',
+        },
+      ),
+    }
+
+    await this.emailService.restPasswordLink(email, token.reset_token)
     // User found
     // Email user
-    // return {
-    //   reset_token: this.jwtService.sign(
-    //     { email },
-    //     {
-    //       expiresIn: '30m',
-    //     },
-    //   ),
-    // };
   }
 
   // Check if reset_token value
@@ -65,11 +69,12 @@ export class AuthService {
   }
 
   async resetPassword(
-    email: string,
     password: string,
     reset_token: string,
   ): Promise<void> {
     await this.checkResetToken(reset_token);
+    const { email } = this.jwtService.decode(reset_token)
+    console.log(email)
     const user = await this.userService.findOneByEmail(email);
     const saltOrRounds = 10;
 
