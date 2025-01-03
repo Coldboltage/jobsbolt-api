@@ -3,16 +3,19 @@ import { UserService } from '../user/user.service';
 import * as bcrypt from 'bcrypt';
 import { SlimUser } from '../user/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from '../email/email.service';
+import { AuthUserUtilService } from '../auth-user-util/auth-user-util.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
+    private authUserUtilService: AuthUserUtilService,
     private jwtService: JwtService,
+    private emailService: EmailService
   ) { }
 
   async validateUser(email: string, pass: string): Promise<SlimUser> {
-    const user = await this.userService.findOneByEmail(email);
+    const user = await this.authUserUtilService.findOneByEmail(email);
     const passwordMatch = await bcrypt.compare(pass, user.password);
 
     if (user && passwordMatch) {
@@ -40,18 +43,21 @@ export class AuthService {
     };
   }
 
-  async sendResetToken(email: string): Promise<{ reset_token: string }> {
+  async sendResetToken(email: string): Promise<void> {
     // check email
-    await this.userService.findOneByEmail(email);
-    // User found
-    return {
+    await this.authUserUtilService.findOneByEmail(email);
+    const token = {
       reset_token: this.jwtService.sign(
         { email },
         {
-          expiresIn: '30m',
+          expiresIn: '60m',
         },
       ),
-    };
+    }
+
+    await this.emailService.restPasswordLink(email, token.reset_token)
+    // User found
+    // Email user
   }
 
   // Check if reset_token value
@@ -64,15 +70,13 @@ export class AuthService {
   }
 
   async resetPassword(
-    email: string,
     password: string,
     reset_token: string,
-  ): Promise<void> {
+  ): Promise<{ email: string, passwordHash: string }> {
     await this.checkResetToken(reset_token);
-    const user = await this.userService.findOneByEmail(email);
+    const { email } = this.jwtService.decode(reset_token)
     const saltOrRounds = 10;
-
     const passwordHash = await bcrypt.hash(password, saltOrRounds);
-    await this.userService.updatePassword(user, passwordHash);
+    return { email, passwordHash }
   }
 }

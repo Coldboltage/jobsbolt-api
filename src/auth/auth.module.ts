@@ -7,10 +7,11 @@ import { ConfigService } from '@nestjs/config';
 import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { AuthController } from './auth.controller';
+import { EmailModule } from '../email/email.module';
+import { AuthUserUtilModule } from '../auth-user-util/auth-user-util.module';
 
 @Module({
   imports: [
-    UserModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -21,6 +22,8 @@ import { AuthController } from './auth.controller';
         };
       },
     }),
+    EmailModule,
+    AuthUserUtilModule,
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService, JwtStrategy, LocalStrategy],

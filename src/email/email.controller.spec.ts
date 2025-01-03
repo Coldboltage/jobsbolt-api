@@ -1,20 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EmailService } from './email.service';
+import { EmailController } from './email.controller';
 import { createMock } from '@golevelup/ts-jest';
 
-describe('EmailService', () => {
-  let service: EmailService;
+describe('EmailController', () => {
+  let controller: EmailController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [EmailService],
+      controllers: [EmailController],
     }).useMocker(createMock)
       .compile();
 
-    service = module.get<EmailService>(EmailService);
+
+    controller = module.get<EmailController>(EmailController);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(controller).toBeDefined();
   });
 });

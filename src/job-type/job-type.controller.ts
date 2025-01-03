@@ -25,6 +25,7 @@ export class JobTypeController {
   @Roles(Role.USER)
   @Post()
   create(@Body() createJobTypeDto: CreateJobTypeDto, @Request() req) {
+    console.log("hello")
     return this.jobTypeService.create(createJobTypeDto, req.user);
   }
 
