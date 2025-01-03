@@ -28,6 +28,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { APP_FILTER } from '@nestjs/core';
 import { EmailModule } from './email/email.module';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
@@ -63,6 +64,33 @@ import { EmailModule } from './email/email.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const test = configService.get<PostgresConnectionOptions>('database');
+        return test;
+      },
+    }),
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const test = {
+          transport: {
+            host: 'smtp.sendgrid.net',
+            port: 587,
+            secure: false, // Use TLS
+            auth: {
+              user: 'apikey', // Always 'apikey' for SendGrid
+              pass: configService.get('secrets.sendGridApiKey'), // Replace with your actual API Key
+            },
+          },
+          defaults: {
+            from: '"Jobsbolt" <admin@jobsbolt.org>', // Default sender
+          },
+          // template: {
+          //   dir: __dirname + '/templates', // Optional: Path to email templates
+          //   options: {
+          //     strict: true,
+          //   },
+          // },
+        };
         return test;
       },
     }),

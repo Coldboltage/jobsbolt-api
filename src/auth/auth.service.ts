@@ -40,18 +40,19 @@ export class AuthService {
     };
   }
 
-  async sendResetToken(email: string): Promise<{ reset_token: string }> {
+  async sendResetToken(email: string): Promise<void> {
     // check email
     await this.userService.findOneByEmail(email);
     // User found
-    return {
-      reset_token: this.jwtService.sign(
-        { email },
-        {
-          expiresIn: '30m',
-        },
-      ),
-    };
+    // Email user
+    // return {
+    //   reset_token: this.jwtService.sign(
+    //     { email },
+    //     {
+    //       expiresIn: '30m',
+    //     },
+    //   ),
+    // };
   }
 
   // Check if reset_token value
