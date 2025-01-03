@@ -27,6 +27,16 @@ export class AppController {
     return result;
   }
 
+  @Post('auth/logout')
+  logout(@Res() res: Response) {
+    res.cookie('jwt', '', {
+      httpOnly: true,
+      path: '/',
+      expires: new Date(0), // Set to a past date to expire the cookie
+    });
+    res.status(200).send({ message: 'Logged out successfully' });
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {

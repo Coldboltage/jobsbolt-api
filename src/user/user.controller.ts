@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { Role } from '../auth/role.enum';
+import { CreateNewPasswordDto } from '../auth/dto/create-new-password.dto';
 
 @Controller('user')
 export class UserController {
@@ -57,5 +58,23 @@ export class UserController {
   @Get('find-user')
   findOne(@Param('id') id: string, @Req() req) {
     return this.userService.findOne(req.user.id);
+  }
+
+  // @Post('send-reset-token/:email')
+  // sendResetToken(@Param('email') email: string) {
+  //   return this.userService.resetUserToken(email);
+  // }
+
+  // @Post('check-reset-token/:jwt')
+  // checkResetToken(@Param('jwt') jwt: string) {
+  //   return this.userService.checkResetToken(jwt);
+  // }
+
+  @Post('reset-password/')
+  resetPassword(@Body() createNewPasswordDto: CreateNewPasswordDto) {
+    return this.userService.resetPassword(
+      createNewPasswordDto.newPassword,
+      createNewPasswordDto.reset_token,
+    );
   }
 }
