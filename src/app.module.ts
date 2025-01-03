@@ -29,6 +29,7 @@ import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { APP_FILTER } from '@nestjs/core';
 import { EmailModule } from './email/email.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { AuthUserUtilModule } from './auth-user-util/auth-user-util.module';
 
 @Module({
   imports: [
@@ -105,6 +106,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
     SeederModule,
     PrometheusModule.register(),
     EmailModule,
+    AuthUserUtilModule,
   ],
   controllers: [AppController],
   providers: [

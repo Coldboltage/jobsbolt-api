@@ -4,17 +4,18 @@ import * as bcrypt from 'bcrypt';
 import { SlimUser } from '../user/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../email/email.service';
+import { AuthUserUtilService } from '../auth-user-util/auth-user-util.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
+    private authUserUtilService: AuthUserUtilService,
     private jwtService: JwtService,
     private emailService: EmailService
   ) { }
 
   async validateUser(email: string, pass: string): Promise<SlimUser> {
-    const user = await this.userService.findOneByEmail(email);
+    const user = await this.authUserUtilService.findOneByEmail(email);
     const passwordMatch = await bcrypt.compare(pass, user.password);
 
     if (user && passwordMatch) {
@@ -44,7 +45,7 @@ export class AuthService {
 
   async sendResetToken(email: string): Promise<void> {
     // check email
-    await this.userService.findOneByEmail(email);
+    await this.authUserUtilService.findOneByEmail(email);
     const token = {
       reset_token: this.jwtService.sign(
         { email },
@@ -71,14 +72,11 @@ export class AuthService {
   async resetPassword(
     password: string,
     reset_token: string,
-  ): Promise<void> {
+  ): Promise<{ email: string, passwordHash: string }> {
     await this.checkResetToken(reset_token);
     const { email } = this.jwtService.decode(reset_token)
-    console.log(email)
-    const user = await this.userService.findOneByEmail(email);
     const saltOrRounds = 10;
-
     const passwordHash = await bcrypt.hash(password, saltOrRounds);
-    await this.userService.updatePassword(user, passwordHash);
+    return { email, passwordHash }
   }
 }
