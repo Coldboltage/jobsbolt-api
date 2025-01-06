@@ -46,12 +46,19 @@ export class JobTypeService implements OnApplicationBootstrap {
       jobTypeId: string;
       name: string;
       location: string;
+      firstTime: boolean;
     }[] = activeJobTypes.map((jobType) => {
       const { id, name, location } = jobType;
+
+      let firstTime: boolean;
+
+      jobType.jobs?.length === 0 ? (firstTime = true) : (firstTime = false);
+
       return {
         jobTypeId: id,
         name,
         location,
+        firstTime,
       };
     });
 
@@ -62,6 +69,7 @@ export class JobTypeService implements OnApplicationBootstrap {
         jobTypeId: string;
         name: string;
         location: string;
+        firstTime: boolean;
       }>('createJobSearch', job);
     }
   }
@@ -88,7 +96,12 @@ export class JobTypeService implements OnApplicationBootstrap {
   // async addJobs() {}
 
   async findAll() {
-    return this.jobTypeRepository.find({});
+    return this.jobTypeRepository.find({
+      relations: {
+        jobs: true,
+      },
+      where: {},
+    });
   }
 
   async findAllSuitableJobs(id: string) {
