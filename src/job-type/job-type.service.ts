@@ -52,7 +52,8 @@ export class JobTypeService implements OnApplicationBootstrap {
 
       let firstTime: boolean;
 
-      jobType.jobs.length === 0 ? (firstTime = true) : (firstTime = false);
+      jobType.jobs?.length === 0 ? (firstTime = true) : (firstTime = false);
+
       return {
         jobTypeId: id,
         name,
@@ -95,7 +96,12 @@ export class JobTypeService implements OnApplicationBootstrap {
   // async addJobs() {}
 
   async findAll() {
-    return this.jobTypeRepository.find({});
+    return this.jobTypeRepository.find({
+      relations: {
+        jobs: true,
+      },
+      where: {},
+    });
   }
 
   async findAllSuitableJobs(id: string) {
