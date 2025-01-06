@@ -38,14 +38,18 @@ export class UserController {
     return this.userService.updateUserCV(req.user.id, file);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get()
   findAll() {
     return this.userService.findAll();
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @Patch()
+  update(@Req() req, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.update(req.user.id, updateUserDto);
   }
 
   @Delete(':id')
