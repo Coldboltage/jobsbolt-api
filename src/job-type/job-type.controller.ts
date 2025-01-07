@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  Req,
 } from '@nestjs/common';
 import { JobTypeService } from './job-type.service';
 import { CreateJobTypeDto } from './dto/create-job-type.dto';
@@ -25,23 +26,12 @@ export class JobTypeController {
   @Roles(Role.USER)
   @Post()
   create(@Body() createJobTypeDto: CreateJobTypeDto, @Request() req) {
-    console.log("hello")
     return this.jobTypeService.create(createJobTypeDto, req.user);
-  }
-
-  @Get()
-  findAll() {
-    return this.jobTypeService.findAll();
   }
 
   @Get('suited-jobs/:id')
   findAllSuitableJobs(@Param('id') id: string) {
     return this.jobTypeService.findAllSuitableJobs(id);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.jobTypeService.findOne(id);
   }
 
   @Patch(':id')
@@ -52,5 +42,22 @@ export class JobTypeController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.jobTypeService.remove(+id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @Get('/find-by-user')
+  findByUser(@Req() req) {
+    return this.jobTypeService.findAllByUser(req.user.id);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.jobTypeService.findOne(id);
+  }
+
+  @Get()
+  findAll() {
+    return this.jobTypeService.findAll();
   }
 }
