@@ -65,3 +65,6 @@ reports
 /docker/**/postgres-data
 /docker/**/rabbitmq.conf
 docker/**/backups/
+
+# Backup
+/backup
