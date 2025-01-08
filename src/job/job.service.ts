@@ -508,7 +508,15 @@ export class JobService implements OnApplicationBootstrap {
         name: true,
         location: true,
         notification: true,
-        applied: false,
+        applied: true,
+        jobType: {
+          name: true,
+          user: {
+            id: true,
+            email: true,
+            name: true,
+          }
+        },
       }
     });
   }
