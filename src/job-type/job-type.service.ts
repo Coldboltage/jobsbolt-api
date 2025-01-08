@@ -104,6 +104,21 @@ export class JobTypeService implements OnApplicationBootstrap {
     });
   }
 
+  async findAllByUser(userId: string) {
+    // console.log(userId)
+    return this.jobTypeRepository.find({
+      relations: {
+        jobs: true,
+        user: true,
+      },
+      where: {
+        user: {
+          id: userId
+        }
+      },
+    });
+  }
+
   async findAllSuitableJobs(id: string) {
     const allSuitedJobs = await this.jobTypeRepository.find({
       relations: {
