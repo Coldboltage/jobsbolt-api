@@ -108,7 +108,6 @@ export class JobTypeService implements OnApplicationBootstrap {
     // console.log(userId)
     return this.jobTypeRepository.find({
       relations: {
-        jobs: true,
         user: true,
       },
       where: {
