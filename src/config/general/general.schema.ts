@@ -10,6 +10,7 @@ const generalEnvSchema = z.object({
   API_URL: z.string(),
   RABBITMQ_URL: z.string(),
   WEBSITE_URL: z.string(),
+  NODE_ENV: z.string(),
 });
 
 export type GeneralConfig = z.infer<typeof generalEnvSchema>;
