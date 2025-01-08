@@ -48,13 +48,15 @@ services:
     networks:
       - jobsbolt_network
     deploy:
-      replicas: 3  # Scale your API service
+      replicas: 4  # Scale your API service
       update_config:
         parallelism: 1  # Update one replica at a time
         delay: 10s      # Wait 10 seconds between updates
       restart_policy:
         condition: on-failure  # Automatically restart failed tasks
       placement:
+        preferences:
+          - spread: node.role
         constraints:
           - node.platform.os == linux  # Ensure it only runs on Linux nodes
 
