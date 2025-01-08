@@ -55,7 +55,7 @@ export class JobController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.USER)
   @Post('add-job-manually')
   @ApiBearerAuth()
   @ApiOperation({
