@@ -60,25 +60,25 @@ services:
         constraints:
           - node.platform.os == linux  # Ensure it only runs on Linux nodes
 
-    jobsboltapi-manager:
-      image: coldbolt/jobsbolt-api:main-latest
-      container_name: jobsbolt-api-manager
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.api-manager.rule=PathPrefix(`/api`)"
-        - "traefik.http.routers.api-manager.entrypoints=websecure"
-        - "traefik.http.routers.api-manager.tls.certresolver=le"
-      env_file:
-        - .env
-      networks:
-        - jobsbolt_network
-      deploy:
-        replicas: 1  # Exactly one replica on the manager
-        placement:
-          constraints:
-            - node.role == manager  # Ensure this runs only on the manager
-        restart_policy:
-          condition: on-failure
+  jobsboltapi-manager:
+    image: coldbolt/jobsbolt-api:main-latest
+    container_name: jobsbolt-api-manager
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-manager.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.api-manager.entrypoints=websecure"
+      - "traefik.http.routers.api-manager.tls.certresolver=le"
+    env_file:
+      - .env
+    networks:
+      - jobsbolt_network
+    deploy:
+      replicas: 1  # Exactly one replica on the manager
+      placement:
+        constraints:
+          - node.role == manager  # Ensure this runs only on the manager
+      restart_policy:
+        condition: on-failure
 
 
   jobsboltworker:
