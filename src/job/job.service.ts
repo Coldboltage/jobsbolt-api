@@ -483,6 +483,36 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
+  async findAllJobsNotifiedPendingInterestSlim(id: string): Promise<Job[]> {
+    return this.jobRepository.find({
+      where: {
+        notification: true,
+        interested: IsNull(),
+        applied: false,
+        jobType: {
+          user: {
+            id: id,
+          },
+        },
+        coverLetter: {
+          generatedCoverLetter: null,
+        },
+      },
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      select: {
+        companyName: true,
+        name: true,
+        location: true,
+        notification: true,
+        applied: false,
+      }
+    });
+  }
+
   async findAllInterestedJobsByUser(id: string): Promise<Job[]> {
     return this.jobRepository.find({
       where: {

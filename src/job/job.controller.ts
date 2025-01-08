@@ -322,6 +322,27 @@ export class JobController {
   @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({
+    summary: 'Gets all jobs where the interested is null slim version',
+  })
+  @ApiOkResponse({
+    description: 'All jobs which are pending are sent to the user',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  @Get('pending-interested-slim')
+  findAllJobsNotifiedPendingInterestSlim(@Req() req) {
+    console.log(req.user.id)
+    return this.jobService.findAllJobsNotifiedPendingInterestSlim(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
     summary: 'Get all of a users interested jobs',
   })
   @ApiOkResponse({
