@@ -41,7 +41,7 @@ services:
       - "traefik.http.routers.api.tls.certresolver=le"
       - "traefik.http.services.api.loadbalancer.server.port=3000"
     env_file:
-      - .env
+      - my_env_config
     depends_on:
       - postgres
       - rabbitmq
@@ -69,7 +69,7 @@ services:
       - "traefik.http.routers.api-manager.entrypoints=websecure"
       - "traefik.http.routers.api-manager.tls.certresolver=le"
     env_file:
-      - .env
+      - my_env_config
     networks:
       - jobsbolt_network
     deploy:
@@ -85,7 +85,7 @@ services:
     image: coldbolt/jobsbolt-worker:latest
     container_name: jobsbolt-worker-main
     env_file:
-      - .env
+      - my_env_config
     depends_on:
       - postgres
       - rabbitmq
@@ -109,7 +109,7 @@ services:
       - "traefik.http.routers.jobsboltwebsite.entrypoints=websecure"
       - "traefik.http.routers.jobsboltwebsite.tls.certresolver=le"
     env_file:
-      - .env
+      - my_env_config
     depends_on:
       - jobsboltapi
       - postgres
