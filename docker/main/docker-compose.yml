@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Traefik Reverse Proxy Service
   traefik:
     image: traefik:v2.5
     container_name: jobsbolt-traefik
@@ -10,87 +9,28 @@ services:
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.le.acme.httpChallenge.entryPoint=web" # Change from 'http' to 'web'
+      - "--certificatesresolvers.le.acme.httpChallenge.entryPoint=web"
       - "--certificatesresolvers.le.acme.email=admin@jobsbolt.org"
       - "--certificatesresolvers.le.acme.storage=/acme.json"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure" # Optional: Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     ports:
-      - "80:80"    # HTTP (for Let's Encrypt to verify)
-      - "443:443"  # HTTPS
-      - "8080:8080"  # Traefik dashboard
-
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"  # Allows Traefik to talk to Docker API
-      - "./acme.json:/acme.json"                      # For Let's Encrypt certificate storage
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./acme.json:/acme.json"
     networks:
       - jobsbolt_network
-
-  # Your other services (as defined earlier) with Traefik labels
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: jobsbolt-rabbit-main
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    volumes:
-      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-    networks:
-      - jobsbolt_network
-
-  postgres:
-    image: postgres
-    container_name: jobsbolt-postgres-main
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: ${TYPEORM_USERNAME}
-      POSTGRES_PASSWORD: ${TYPEORM_PASSWORD}
-      POSTGRES_DB: ${TYPEORM_DATABASE}
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    networks:
-      - jobsbolt_network
-    labels:
-      - "pgbackup.enable=true"
-    
-  pgbackup:
-    image: justb4/pgbackup:11
-    container_name: pg_backup
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./backups:/backup # Host directory to store backups
-    environment:
-      - PGB_SCHEDULE=0 23 * * *
-
-  prometheus:
-    image: prom/prometheus
-    container_name: jobsbolt-prometheus-main
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    networks:
-      - jobsbolt_network
-
-  grafana:
-    image: grafana/grafana
-    container_name: jobsbolt-grafana-main
-    ports:
-      - "3001:3000"
-    depends_on:
-      - prometheus
-    volumes:
-      - grafana-storage:/var/lib/grafana
-    networks:
-      - jobsbolt_network
+    deploy:
+      replicas: 1  # Traefik as a single replica (you may scale if needed)
+      placement:
+        constraints:
+          - node.role == manager  # Ensure Traefik runs only on the manager node
 
   jobsboltapi:
     image: coldbolt/jobsbolt-api:main-latest
-    pull_policy: always
     container_name: jobsbolt-api-main
     ports:
       - "3000:3000"
@@ -99,33 +39,66 @@ services:
       - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=le"
-      - "traefik.http.services.api.loadbalancer.server.port=3000" # Ensure this matches the port your NestJS app runs on
+      - "traefik.http.services.api.loadbalancer.server.port=3000"
     env_file:
       - .env
     depends_on:
       - postgres
       - rabbitmq
-      - prometheus
     networks:
       - jobsbolt_network
+    deploy:
+      replicas: 4  # Scale your API service
+      update_config:
+        parallelism: 1  # Update one replica at a time
+        delay: 10s      # Wait 10 seconds between updates
+      restart_policy:
+        condition: on-failure  # Automatically restart failed tasks
+      placement:
+        preferences:
+          - spread: node.role
+        constraints:
+          - node.platform.os == linux  # Ensure it only runs on Linux nodes
+
+    jobsboltapi-manager:
+      image: coldbolt/jobsbolt-api:main-latest
+      container_name: jobsbolt-api-manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.api-manager.rule=PathPrefix(`/api`)"
+        - "traefik.http.routers.api-manager.entrypoints=websecure"
+        - "traefik.http.routers.api-manager.tls.certresolver=le"
+      env_file:
+        - .env
+      networks:
+        - jobsbolt_network
+      deploy:
+        replicas: 1  # Exactly one replica on the manager
+        placement:
+          constraints:
+            - node.role == manager  # Ensure this runs only on the manager
+        restart_policy:
+          condition: on-failure
+
 
   jobsboltworker:
     image: coldbolt/jobsbolt-worker:latest
-    pull_policy: always
     container_name: jobsbolt-worker-main
     env_file:
       - .env
     depends_on:
       - postgres
       - rabbitmq
-      - prometheus
       - jobsboltapi
     networks:
       - jobsbolt_network
+    deploy:
+      replicas: 2  # Scale workers as needed
+      restart_policy:
+        condition: on-failure
 
   jobsboltwebsite:
     image: coldbolt/jobsbolt-website:main-latest
-    pull_policy: always
     container_name: jobsbolt-website-main
     ports:
       - "1337:1337"
@@ -141,15 +114,18 @@ services:
       - jobsboltapi
       - postgres
       - rabbitmq
-      - prometheus
     networks:
       - jobsbolt_network
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
 
 networks:
   jobsbolt_network:
-    driver: bridge
+    driver: overlay  # Use overlay networks for Swarm mode
 
 volumes:
   grafana-storage:
-  acme.json:  # This is used to store Let's Encrypt certificates.
-    driver: main
+  acme.json:
+    driver: local
