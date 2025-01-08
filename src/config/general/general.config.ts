@@ -9,6 +9,7 @@ export default registerAs('general', () => {
     fullTest: process.env.FULL_TEST,
     apiUrl: process.env.API_LOCAL,
     rabbitmqUrl: process.env.RABBITMQ_URL,
-    websiteUrl: process.env.WEBSITE_URL
+    websiteUrl: process.env.WEBSITE_URL,
+    nodeEnv: process.env.NODE_ENV,
   };
 });
