@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToMany,
   OneToOne,
@@ -11,6 +12,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 
 @Entity()
+@Index('idx_job_notification_interested_applied', [
+  'notification',
+  'interested',
+  'applied',
+])
 export class Job {
   @PrimaryGeneratedColumn('uuid') // Fairly sure we can't have two of the same indeedId so we'll use this
   @ApiProperty()

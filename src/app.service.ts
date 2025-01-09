@@ -20,7 +20,7 @@ export class AppService implements OnApplicationBootstrap {
   }
 
   getHello(): string {
-    return 'Hello World!';
+    return `${2 + 2}`;
   }
 
   @Cron('0 12 * * *')
