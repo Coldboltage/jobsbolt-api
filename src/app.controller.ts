@@ -15,6 +15,11 @@ export class AppController {
     private readonly appService: AppService,
   ) { }
 
+  @Get('hello-world')
+  getHello() {
+    return this.appService.getHello();
+  }
+
   @UseGuards(LocalAuthGuard)
   @Post('auth/login')
   async login(@Request() req, @Res({ passthrough: true }) res: Response) {

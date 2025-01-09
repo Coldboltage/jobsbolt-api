@@ -37,7 +37,7 @@ export class User {
   @Column({ type: 'simple-array', nullable: true })
   roles: Role[];
 
-  @OneToMany(() => JobType, (jobType) => jobType.user, { eager: true })
+  @OneToMany(() => JobType, (jobType) => jobType.user)
   jobType: JobType[];
 }
 
