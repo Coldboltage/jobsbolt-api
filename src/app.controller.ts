@@ -15,6 +15,7 @@ export class AppController {
     private readonly appService: AppService,
   ) { }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('hello-world')
   getHello() {
     return this.appService.getHello();

@@ -66,10 +66,10 @@ export class JobService implements OnApplicationBootstrap {
     newJobs.forEach((job) => (job.scannedLast = new Date()));
 
     if (!newJobs || newJobs.length === 0) {
-      console.log("no new jobs")
+      console.log('no new jobs');
       return null;
     }
-    console.log("new jobs found adding them")
+    console.log('new jobs found adding them');
     const updatedNewJobs = await this.jobRepository.save(newJobs);
 
     await this.utilService.buildJsonLd(updatedNewJobs, 'job');
@@ -125,8 +125,8 @@ export class JobService implements OnApplicationBootstrap {
     scrappedJobs: JobInfoInterface[],
   ): Promise<void> {
     // // All jobs rekate to a jobType
-    console.log(jobTypeId)
-    console.log(scrappedJobs.length)
+    console.log(jobTypeId);
+    console.log(scrappedJobs.length);
     const jobTypeEntity = await this.jobTypeService.findOne(jobTypeId);
     // Check which jobs exist already
     const allJobsIds = scrappedJobs.map((scrappedJob) => scrappedJob.indeedId);
@@ -374,6 +374,22 @@ export class JobService implements OnApplicationBootstrap {
           user: true,
         },
       },
+      select: {
+        companyName: true,
+        name: true,
+        location: true,
+        notification: true,
+        applied: true,
+        id: true,
+        jobType: {
+          name: true,
+          user: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
     });
     if (!jobsToApplyEntity || jobsToApplyEntity.length === 0)
       throw new NotFoundException('no_cover_letters_ready');
@@ -406,6 +422,7 @@ export class JobService implements OnApplicationBootstrap {
       },
       where: {
         jobType: {
+          active: true,
           user: {
             id: id,
           },
@@ -480,6 +497,22 @@ export class JobService implements OnApplicationBootstrap {
         },
         coverLetter: true,
       },
+      select: {
+        companyName: true,
+        name: true,
+        location: true,
+        notification: true,
+        applied: true,
+        id: true,
+        jobType: {
+          name: true,
+          user: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
     });
   }
 
@@ -509,15 +542,16 @@ export class JobService implements OnApplicationBootstrap {
         location: true,
         notification: true,
         applied: true,
+        id: true,
         jobType: {
           name: true,
           user: {
             id: true,
             email: true,
             name: true,
-          }
+          },
         },
-      }
+      },
     });
   }
 
@@ -543,6 +577,22 @@ export class JobService implements OnApplicationBootstrap {
           user: true,
         },
         coverLetter: true,
+      },
+      select: {
+        companyName: true,
+        name: true,
+        location: true,
+        notification: true,
+        applied: true,
+        id: true,
+        jobType: {
+          name: true,
+          user: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
       },
     });
   }
@@ -583,11 +633,7 @@ export class JobService implements OnApplicationBootstrap {
     );
   }
 
-  async updateJobApplication(
-    id: string,
-    indeedId: string,
-    status: boolean,
-  ) {
+  async updateJobApplication(id: string, indeedId: string, status: boolean) {
     const jobEntity = await this.jobRepository.findOne({
       relations: {
         jobType: {

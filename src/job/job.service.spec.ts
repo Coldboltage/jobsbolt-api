@@ -1546,6 +1546,7 @@ describe('JobService', () => {
           },
           where: expect.objectContaining({
             jobType: expect.objectContaining({
+              active: true,
               user: expect.objectContaining({
                 id: mockUser.id,
               }),
@@ -1753,6 +1754,21 @@ describe('JobService', () => {
               user: true,
             },
             coverLetter: true,
+          },
+          select: {
+            companyName: true,
+            name: true,
+            location: true,
+            notification: true,
+            applied: true,
+            jobType: {
+              name: true,
+              user: {
+                id: true,
+                email: true,
+                name: true,
+              },
+            },
           },
         }),
       );
