@@ -193,7 +193,6 @@ export class JobService implements OnApplicationBootstrap {
         scannedLast: null,
         companyName: job.companyName,
       });
-      console.log(jobEntity);
       console.log(`${jobEntity.indeedId} added`);
     }
     return;
