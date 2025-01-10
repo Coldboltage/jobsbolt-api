@@ -1304,6 +1304,22 @@ describe('JobService', () => {
             user: true,
           },
         },
+        select: {
+          companyName: true,
+          name: true,
+          location: true,
+          notification: true,
+          applied: true,
+          id: true,
+          jobType: {
+            name: true,
+            user: {
+              id: true,
+              email: true,
+              name: true,
+            },
+          },
+        },
       });
     });
 
@@ -1340,6 +1356,22 @@ describe('JobService', () => {
           coverLetter: true,
           jobType: {
             user: true,
+          },
+        },
+        select: {
+          companyName: true,
+          name: true,
+          location: true,
+          notification: true,
+          applied: true,
+          id: true,
+          jobType: {
+            name: true,
+            user: {
+              id: true,
+              email: true,
+              name: true,
+            },
           },
         },
       });
@@ -1761,6 +1793,7 @@ describe('JobService', () => {
             location: true,
             notification: true,
             applied: true,
+            id: true,
             jobType: {
               name: true,
               user: {
