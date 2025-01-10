@@ -67,4 +67,4 @@ reports
 docker/**/backups/
 
 # Backup
-/backup
+/backups

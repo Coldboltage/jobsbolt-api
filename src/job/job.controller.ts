@@ -254,11 +254,7 @@ export class JobController {
     @Param('state', ParseBoolPipe) state: boolean,
     @Param('indeedId') indeedId: string,
   ) {
-    return this.jobService.updateJobApplication(
-      req.user.id,
-      indeedId,
-      state,
-    );
+    return this.jobService.updateJobApplication(req.user.id, indeedId, state);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -314,7 +310,7 @@ export class JobController {
   })
   @Get('pending-interested')
   findAllJobsNotifiedPendingInterest(@Req() req) {
-    console.log(req.user.id)
+    console.log(req.user.id);
     return this.jobService.findAllJobsNotifiedPendingInterest(req.user.id);
   }
 
@@ -335,7 +331,7 @@ export class JobController {
   })
   @Get('pending-interested-slim')
   findAllJobsNotifiedPendingInterestSlim(@Req() req) {
-    console.log(req.user.id)
+    console.log(req.user.id);
     return this.jobService.findAllJobsNotifiedPendingInterestSlim(req.user.id);
   }
 

@@ -6,14 +6,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import {
-  Job,
-  JobInfoInterface,
-  ManualJobInfoInterface,
-} from './entities/job.entity';
+import { Job, ManualJobInfoInterface } from './entities/job.entity';
 import { faker } from '@faker-js/faker';
 import { JobType } from '../job-type/entities/job-type.entity';
-import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
 
 describe('JobController', () => {
   let controller: JobController;
