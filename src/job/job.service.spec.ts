@@ -1768,7 +1768,6 @@ describe('JobService', () => {
         expect.objectContaining({
           where: {
             notification: true,
-            suited: true,
             interested: true,
             applied: false,
             jobType: {
@@ -1794,6 +1793,7 @@ describe('JobService', () => {
             notification: true,
             applied: true,
             id: true,
+            interested: true,
             jobType: {
               name: true,
               user: {
@@ -1802,6 +1802,9 @@ describe('JobService', () => {
                 name: true,
               },
             },
+            coverLetter: {
+              id: true,
+            }
           },
         }),
       );
