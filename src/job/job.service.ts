@@ -558,7 +558,6 @@ export class JobService implements OnApplicationBootstrap {
     return this.jobRepository.find({
       where: {
         notification: true,
-        suited: true,
         interested: true,
         applied: false,
         jobType: {
@@ -584,6 +583,7 @@ export class JobService implements OnApplicationBootstrap {
         notification: true,
         applied: true,
         id: true,
+        interested: true,
         jobType: {
           name: true,
           user: {
@@ -592,6 +592,9 @@ export class JobService implements OnApplicationBootstrap {
             name: true,
           },
         },
+        coverLetter: {
+          id: true,
+        }
       },
     });
   }
