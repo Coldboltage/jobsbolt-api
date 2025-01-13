@@ -1199,6 +1199,10 @@ describe('JobService', () => {
             },
           },
         },
+        order: {
+          suitabilityScore: 'DESC',
+          name: 'ASC',
+        },
       });
     });
 
@@ -1699,6 +1703,10 @@ describe('JobService', () => {
             },
             coverLetter: true,
           },
+          order: {
+            suitabilityScore: 'DESC',
+            name: 'ASC',
+          },
         }),
       );
     });
@@ -1804,7 +1812,11 @@ describe('JobService', () => {
             },
             coverLetter: {
               id: true,
-            }
+            },
+            order: {
+              suitabilityScore: 'DESC',
+              name: 'ASC',
+            },
           },
         }),
       );

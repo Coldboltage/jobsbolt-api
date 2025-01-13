@@ -348,6 +348,10 @@ export class JobService implements OnApplicationBootstrap {
           },
         },
       },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
+      },
     });
   }
 
@@ -512,6 +516,10 @@ export class JobService implements OnApplicationBootstrap {
           },
         },
       },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
+      },
     });
   }
 
@@ -550,6 +558,10 @@ export class JobService implements OnApplicationBootstrap {
             name: true,
           },
         },
+      },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
       },
     });
   }
@@ -594,7 +606,11 @@ export class JobService implements OnApplicationBootstrap {
         },
         coverLetter: {
           id: true,
-        }
+        },
+      },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
       },
     });
   }
