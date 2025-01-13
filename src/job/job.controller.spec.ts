@@ -419,6 +419,7 @@ describe('JobController', () => {
         interested: false,
         manual: mockJob.manual,
         coverLetter: null,
+        biggerAreaOfImprovement: ''
       };
 
       // Get the data

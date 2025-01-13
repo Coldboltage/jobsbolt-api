@@ -174,6 +174,7 @@ describe('JobService', () => {
       suitabilityScore: 95,
       conciseDescription: faker.lorem.sentence(),
       conciseSuited: faker.lorem.sentence(),
+      biggerAreaOfImprovement: faker.lorem.sentence()
     };
   };
 
@@ -514,6 +515,7 @@ describe('JobService', () => {
         suitabilityScore: mockContent.suitabilityScore,
         conciseDescription: mockContent.conciseDescription,
         conciseSuited: mockContent.conciseSuited,
+        biggerAreaOfImprovement: mockContent.biggerAreaOfImprovement,
       };
       // Act
       const response = service.processJobObject(mockJob);
@@ -537,6 +539,7 @@ describe('JobService', () => {
         suitabilityScore: mockContent.suitabilityScore,
         conciseDescription: mockContent.conciseDescription,
         conciseSuited: mockContent.conciseSuited,
+        biggerAreaOfImprovement: mockContent.biggerAreaOfImprovement,
       };
       // Act
       const response = service.processJobObject(mockJob);
@@ -656,6 +659,8 @@ describe('JobService', () => {
         suitabilityScore: 0,
         interested: null,
         manual: false,
+        biggerAreaOfImprovement: ''
+
       };
 
       const existingJobEntityTwo: Job = {
@@ -680,6 +685,7 @@ describe('JobService', () => {
         suitabilityScore: 0,
         interested: null,
         manual: false,
+        biggerAreaOfImprovement: ''
       };
 
       const jobTypeEntitySpy = jest
@@ -873,6 +879,7 @@ describe('JobService', () => {
       suitabilityScore: 95,
       interested: null,
       manual: false,
+      biggerAreaOfImprovement: ''
     };
     it('should find all jobs available for a scan', async () => {
       // Arrange
@@ -1238,6 +1245,10 @@ describe('JobService', () => {
               id: mockJob.jobType[0].user.id,
             },
           },
+        },
+        order: {
+          suitabilityScore: 'DESC',
+          name: 'ASC',
         },
       });
     });
@@ -1813,10 +1824,10 @@ describe('JobService', () => {
             coverLetter: {
               id: true,
             },
-            order: {
-              suitabilityScore: 'DESC',
-              name: 'ASC',
-            },
+          },
+          order: {
+            suitabilityScore: 'DESC',
+            name: 'ASC',
           },
         }),
       );
@@ -1863,6 +1874,7 @@ describe('JobService', () => {
         interested: false,
         manual: mockJob.manual,
         coverLetter: null,
+        biggerAreaOfImprovement: ''
       };
 
       const checkJobSpy = jest

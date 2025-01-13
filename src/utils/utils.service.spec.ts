@@ -164,6 +164,10 @@ describe('UtilsService', () => {
                   type: 'string',
                   description: ` Please format the job descrption, job pay and job location, into a very concise Discord embed message using emojis in Markdown. Include the job title, company name, location, salary range, a brief description of the role, key responsibilities, benefits, and any important notes. Use emojis that fit the context. Use the following format, don't tell me you've made it concise, just give me the message:.`,
                 },
+                biggerAreaOfImprovement: {
+                  type: 'string',
+                  description: `Based on the provided analysis, identify the single biggest area of improvement the user can work on based on their CV and description versus the Job Description, so they know what single thing they can do to help with their job hunting endeavours.`,
+                },
                 conciseSuited: {
                   type: 'string',
                   description: `Using the analysis and is_suited in a very concise way, explain why you feel they were suited.`,
@@ -175,6 +179,7 @@ describe('UtilsService', () => {
                 'suitabilityScore',
                 'conciseDescription',
                 'conciseSuited',
+                'biggerAreaOfImprovement'
               ],
               additionalProperties: false,
             },
