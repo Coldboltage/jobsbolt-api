@@ -82,6 +82,10 @@ export class Job {
   @ApiProperty()
   suitabilityScore: number;
 
+  @Column({ default: null, nullable: true })
+  @ApiProperty()
+  biggerAreaOfImprovement: string;
+
   @ManyToMany(() => JobType, (jobType) => jobType.jobs)
   @ApiProperty({ type: () => JobType })
   jobType: JobType[];
@@ -207,6 +211,8 @@ export interface CompleteJobParse {
   suitabilityScore: number;
   conciseDescription: string;
   conciseSuited: string;
+  biggerAreaOfImprovement: string;
+
 }
 
 export interface ParsedJobContent {
@@ -215,6 +221,7 @@ export interface ParsedJobContent {
   suitabilityScore: number;
   conciseDescription: string;
   conciseSuited: string;
+  biggerAreaOfImprovement: string;
 }
 
 // BUILD JSON
@@ -249,6 +256,8 @@ export interface JobJson {
             suitabilityScore: { type: string; description: string };
             conciseDescription: { type: string; description: string };
             conciseSuited: { type: string; description: string };
+            biggerAreaOfImprovement: { type: string; description: string };
+
           };
           required: string[];
           additionalProperties: boolean;

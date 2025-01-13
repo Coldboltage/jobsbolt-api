@@ -107,6 +107,7 @@ export class JobService implements OnApplicationBootstrap {
     const suitabilityScore = content.suitabilityScore;
     const conciseDescription = content.conciseDescription;
     const conciseSuited = content.conciseSuited;
+    const { biggerAreaOfImprovement } = content
 
     const object: CompleteJobParse = {
       indeedId,
@@ -115,6 +116,7 @@ export class JobService implements OnApplicationBootstrap {
       suitabilityScore,
       conciseDescription,
       conciseSuited,
+      biggerAreaOfImprovement,
     };
 
     return object;
@@ -348,6 +350,10 @@ export class JobService implements OnApplicationBootstrap {
           },
         },
       },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
+      },
     });
   }
 
@@ -512,6 +518,10 @@ export class JobService implements OnApplicationBootstrap {
           },
         },
       },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
+      },
     });
   }
 
@@ -550,6 +560,10 @@ export class JobService implements OnApplicationBootstrap {
             name: true,
           },
         },
+      },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
       },
     });
   }
@@ -594,7 +608,11 @@ export class JobService implements OnApplicationBootstrap {
         },
         coverLetter: {
           id: true,
-        }
+        },
+      },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
       },
     });
   }
@@ -631,6 +649,7 @@ export class JobService implements OnApplicationBootstrap {
         conciseDescription: completeJob.conciseDescription,
         scannedLast: new Date(),
         conciseSuited: completeJob.conciseSuited,
+        biggerAreaOfImprovement: completeJob.biggerAreaOfImprovement,
       },
     );
   }
