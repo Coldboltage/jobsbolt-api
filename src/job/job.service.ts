@@ -385,6 +385,7 @@ export class JobService implements OnApplicationBootstrap {
         location: true,
         notification: true,
         applied: true,
+        interested: true,
         id: true,
         jobType: {
           name: true,
@@ -508,6 +509,7 @@ export class JobService implements OnApplicationBootstrap {
         location: true,
         notification: true,
         applied: true,
+        interested: true,
         id: true,
         jobType: {
           name: true,
@@ -551,6 +553,7 @@ export class JobService implements OnApplicationBootstrap {
         location: true,
         notification: true,
         applied: true,
+        interested: true,
         id: true,
         jobType: {
           name: true,

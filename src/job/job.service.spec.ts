@@ -1325,6 +1325,7 @@ describe('JobService', () => {
           location: true,
           notification: true,
           applied: true,
+          interested: true,
           id: true,
           jobType: {
             name: true,
@@ -1379,6 +1380,7 @@ describe('JobService', () => {
           location: true,
           notification: true,
           applied: true,
+          interested: true,
           id: true,
           jobType: {
             name: true,
