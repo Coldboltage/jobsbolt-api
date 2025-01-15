@@ -74,6 +74,37 @@ export class JobTypeService implements OnApplicationBootstrap {
     }
   }
 
+  async checkSingleJobType(jobTypeEntity: JobType) {
+    this.logger.debug('New Single Job Type');
+
+    const { id, name, location } = jobTypeEntity;
+
+
+    const formattedJobType: {
+      jobTypeId: string;
+      name: string;
+      location: string;
+      firstTime: boolean;
+    } = {
+      jobTypeId: id,
+      name,
+      location,
+      firstTime: true,
+    }
+
+
+    console.log(formattedJobType);
+
+
+    this.client.emit<{
+      jobTypeId: string;
+      name: string;
+      location: string;
+      firstTime: boolean;
+    }>('createJobSearch', formattedJobType);
+
+  }
+
   async create(
     createJobTypeDto: CreateJobTypeDto,
     user: SlimUser,
@@ -90,6 +121,7 @@ export class JobTypeService implements OnApplicationBootstrap {
     });
 
     const savedEntity = await this.jobTypeRepository.save(jobTypeEntity);
+    await this.checkSingleJobType(savedEntity)
     return savedEntity;
   }
 
@@ -145,8 +177,10 @@ export class JobTypeService implements OnApplicationBootstrap {
     return jobTypeEntity;
   }
 
-  update(id: number, updateJobTypeDto: UpdateJobTypeDto) {
-    return `This action updates a #${id} jobType`;
+  async update(id: string, updateJobTypeDto: UpdateJobTypeDto) {
+    console.log(id)
+    console.log(updateJobTypeDto)
+    return this.jobTypeRepository.update({ id }, updateJobTypeDto);
   }
 
   remove(id: number) {

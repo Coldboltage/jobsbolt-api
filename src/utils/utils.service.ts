@@ -23,7 +23,22 @@ export class UtilsService {
 
     const allDescriptions = jobTypeDescriptions.join('\n');
 
-    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. I wanted to know if it would suit me given the following cv: ${job.jobType[0].user.cv}. Here's also my personal descrption of myself and what I'm looking for: ${job.jobType[0].user.description}. The CV helps but the description gives a more recent telling of what the user is thinking. The job type description is as follows: ${allDescriptions}. This serves to further refine the search, specifying particular criteria for the type of job being sought.`;
+    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. To be clear, what I have stated is the job description so far, and nothing about the user. 
+
+    **Candidate CV**: 
+    The following represents my resume or CV, which outlines my professional experience and qualifications: 
+    ${job.jobType[0].user.cv || "No CV provided."}
+
+    **Candidate Description**: 
+    Here is a personal description of myself, which reflects my most recent thoughts on what I am looking for in a job:
+    ${job.jobType[0].user.description || "No personal description provided."}
+
+    **Job Type Description**: 
+    This is a refined description of the type of job I am specifically seeking:
+    ${allDescriptions || "No job type description provided."}
+
+    Please analyze the information above and strictly compare it against the **job description** provided below. Do not use the job description to infer any details about me as a candidate.
+`;
   }
 
   createCoverLetterMessage(coverLetter: CoverLetter) {
@@ -47,10 +62,11 @@ Goal: The generated cover letter should reflect the user's personal voice and st
 
   buildJobJson(job: Job): JobJson {
     return {
-      custom_id: job.indeedId,
+      custom_id: job.id,
       method: 'POST',
       url: '/v1/chat/completions',
       body: {
+        temperature: 0,
         model: 'gpt-4o-2024-11-20',
         messages: [
           {
@@ -71,7 +87,22 @@ Goal: The generated cover letter should reflect the user's personal voice and st
                 analysis: {
                   type: 'string',
                   description:
-                    "The detailed analysis of how well the candidate fits the job description. This should consider current qualifications, experience, and potential for growth. See the user description and job type description if provided. It is imperative that the user's wishes be met. If they say they could do something, good. If the candidate says they are not interested in something, then we need to honor this. You must be very strict. Weighting system: Core Skills (40%), Experience Level (25%), Candidate Preferences (20%), Potential for Growth (10%), Cultural Fit and Soft Skills (5%). Use these weights to structure the analysis.",
+                    `Analysis: The detailed evaluation of how well the candidate aligns with the job description. This should determine the candidate's fit for the role, focusing on their ability to meet the requirements and expectations outlined in the job description. The analysis should:
+                    - Assess qualifications, experience, and potential for growth based strictly on the provided information.
+                    - Identify gaps or missing information that hinder determining fit, explicitly penalizing incomplete or vague inputs.
+                    - Avoid inferring or making assumptions about the candidate beyond what is explicitly stated.
+
+                    Key Instructions:
+                    1. Focus on Fit, Not Suitability: Evaluate the candidate's ability to meet the role's requirements, not just whether the job matches their preferences.
+                    2. Penalize Sparse Data: If the input lacks sufficient detail (e.g., no CV or poorly defined description), the analysis must clearly highlight these gaps and assign a lower fit score.
+                    3. Adhere to User Preferences: Respect stated preferences and disqualifications; do not suggest suitability if the candidate has explicitly ruled something out.
+
+                    Weighting System for Fit:
+                    - Core Skills (40%): Does the candidate possess the critical skills listed in the job description?
+                    - Experience Level (25%): How well does their experience align with the role's expectations?
+                    - Candidate Preferences (20%): Do their preferences align with the job's nature (e.g., location, tools, work style)?
+                    - Potential for Growth (10%): Is there room for the candidate to grow into the role based on their background?
+                    - Cultural Fit and Soft Skills (5%): How well does the candidate's personality and work style align with the company culture?`,
                 },
                 is_suitable: {
                   type: 'boolean',

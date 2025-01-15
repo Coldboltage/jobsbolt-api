@@ -509,7 +509,7 @@ describe('JobService', () => {
       );
 
       const answer: CompleteJobParse = {
-        indeedId: mockJob.custom_id,
+        jobId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: mockContent.is_suitable,
         suitabilityScore: mockContent.suitabilityScore,
@@ -533,7 +533,7 @@ describe('JobService', () => {
       );
 
       const answer: CompleteJobParse = {
-        indeedId: mockJob.custom_id,
+        jobId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: jobSuitedState,
         suitabilityScore: mockContent.suitabilityScore,
@@ -721,6 +721,7 @@ describe('JobService', () => {
         desiredPay: 0,
         desiredPayUnit: PayUnits.HOURLY,
         description: '',
+        nextScan: new Date()
       };
 
       const mockJobInfo: JobInfoInterface = {
@@ -788,6 +789,7 @@ describe('JobService', () => {
         desiredPay: 0,
         desiredPayUnit: PayUnits.HOURLY,
         description: '',
+        nextScan: new Date()
       };
 
       const mockJobInfo: JobInfoInterface = {
@@ -855,6 +857,7 @@ describe('JobService', () => {
       desiredPay: 0,
       desiredPayUnit: PayUnits.MONTHLY,
       description: '',
+      nextScan: new Date()
     };
 
     const jobEntity: Job = {
@@ -906,7 +909,7 @@ describe('JobService', () => {
   describe('sendDiscordNewJobMessage', () => {
     it('should send job messages to users', async () => {
       // Arrange
-      const { mockUser, mockJob } = createFullUserWithDetails();
+      const { mockUser, mockJobTypeEntity, mockJob } = createFullUserWithDetails();
 
       mockJob.suited = true;
       mockJob.notification = false;
@@ -917,6 +920,8 @@ describe('JobService', () => {
 
       const manualMockJob = structuredClone(mockJob)
       manualMockJob.manual = true
+
+      mockJobTypeEntity.nextScan = new Date("2022-03-25")
 
       const findUsersWithUnsendSuitableJobsSpy = jest
         .spyOn(userService, 'findUsersWithUnsendSuitableJobs')
@@ -977,7 +982,6 @@ describe('JobService', () => {
       mockJob.conciseDescription = faker.lorem.paragraph();
       mockJob.conciseSuited = faker.lorem.sentence();
       mockJob.suitabilityScore = 95;
-      mockUser.lastScanned = new Date()
 
       const findUsersWithUnsendSuitableJobsSpy = jest
         .spyOn(userService, 'findUsersWithUnsendSuitableJobs')
@@ -1513,34 +1517,45 @@ describe('JobService', () => {
       mockJob.scannedLast = new Date();
       mockJob.suited = true;
 
+      const jobParsed: CompleteJobParse = {
+        jobId: mockJob.id,
+        summary: mockJob.summary,
+        suited: mockJob.suited,
+        suitabilityScore: mockJob.suitabilityScore,
+        conciseDescription: mockJob.conciseDescription,
+        conciseSuited: mockJob.conciseSuited,
+        biggerAreaOfImprovement: mockJob.biggerAreaOfImprovement,
+      };
+
       const jobRepoUpdateSpy = jest
         .spyOn(jobRepository, 'update')
         .mockResolvedValueOnce({
           raw: [],
           affected: 1,
-          generatedMaps: [mockJob],
+          generatedMaps: [jobParsed],
         } as UpdateResult);
       // Act
 
-      const response = await service.updateFromCompleteJobParse(mockJob);
+      const response = await service.updateFromCompleteJobParse(jobParsed);
 
       // Assert
       expect(jobRepoUpdateSpy).toHaveBeenCalled();
       expect(jobRepoUpdateSpy).toHaveBeenCalledWith(
-        { indeedId: mockJob.indeedId },
+        { id: jobParsed.jobId },
         {
-          summary: mockJob.summary,
-          suited: mockJob.suited,
-          suitabilityScore: mockJob.suitabilityScore,
-          conciseDescription: mockJob.conciseDescription,
+          summary: jobParsed.summary,
+          suited: jobParsed.suited,
+          suitabilityScore: jobParsed.suitabilityScore,
+          conciseDescription: jobParsed.conciseDescription,
           scannedLast: expect.any(Date),
-          conciseSuited: mockJob.conciseSuited,
+          conciseSuited: jobParsed.conciseSuited,
+          biggerAreaOfImprovement: jobParsed.biggerAreaOfImprovement
         },
       );
       expect(response).toEqual({
         raw: [],
         affected: 1,
-        generatedMaps: [mockJob],
+        generatedMaps: [jobParsed],
       } as UpdateResult);
     });
   });
