@@ -966,6 +966,39 @@ describe('JobService', () => {
       expect(findUsersBestFiveJobsSpy).not.toHaveBeenCalled();
       expect(discordServiceSendMessageSpy).not.toHaveBeenCalled();
     });
+
+    it('should not fire because last scan too recent', async () => {
+      // Arrange
+      const { mockUser, mockJob } = createFullUserWithDetails();
+
+      mockJob.suited = true;
+      mockJob.notification = false;
+      mockJob.summary = faker.lorem.paragraphs();
+      mockJob.conciseDescription = faker.lorem.paragraph();
+      mockJob.conciseSuited = faker.lorem.sentence();
+      mockJob.suitabilityScore = 95;
+      mockUser.lastScanned = new Date()
+
+      const findUsersWithUnsendSuitableJobsSpy = jest
+        .spyOn(userService, 'findUsersWithUnsendSuitableJobs')
+        .mockResolvedValueOnce([mockUser]);
+
+      const findUsersBestFiveJobsSpy = jest.spyOn(
+        service,
+        'findUsersBestFiveJobs',
+      );
+
+      const discordServiceSendMessageSpy = jest.spyOn(
+        discordService,
+        'sendMessage',
+      );
+      // Act
+      await service.sendDiscordNewJobMessage();
+      // Assert
+      expect(findUsersWithUnsendSuitableJobsSpy).toHaveBeenCalled();
+      expect(findUsersBestFiveJobsSpy).not.toHaveBeenCalled();
+      expect(discordServiceSendMessageSpy).not.toHaveBeenCalled();
+    });
   });
   describe('findAll', () => {
     it('should fire jobRepository.find with an empty object', async () => {

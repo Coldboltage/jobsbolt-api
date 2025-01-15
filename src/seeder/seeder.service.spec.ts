@@ -56,6 +56,7 @@ describe('SeederService', () => {
         userTalk: '',
         roles: [],
         jobType: [],
+        lastScanned: null
       };
 
       const userRepoSaveSpy = jest
