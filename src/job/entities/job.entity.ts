@@ -92,6 +92,10 @@ export class Job {
 
   @Column('date', { nullable: true })
   @ApiProperty()
+  firstAdded: Date;
+
+  @Column('date', { nullable: true })
+  @ApiProperty()
   scannedLast: Date;
 
   @Column({ default: false })

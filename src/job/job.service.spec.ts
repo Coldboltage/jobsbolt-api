@@ -1648,7 +1648,7 @@ describe('JobService', () => {
                 id: mockUser.id,
               }),
             }),
-            suitabilityScore: MoreThanOrEqual(85), // Ensure this is the same instance
+            suitabilityScore: MoreThanOrEqual(75), // Ensure this is the same instance
             suited: true,
             notification: false,
           }),

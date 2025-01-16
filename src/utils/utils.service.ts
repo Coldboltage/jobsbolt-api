@@ -27,17 +27,17 @@ export class UtilsService {
 
     **Candidate CV**: 
     The following represents my resume or CV, which outlines my professional experience and qualifications: 
-    ${job.jobType[0].user.cv || "No CV provided."}
+    ${job.jobType[0].user.cv || 'No CV provided.'}
 
     **Candidate Description**: 
     Here is a personal description of myself, which reflects my most recent thoughts on what I am looking for in a job:
-    ${job.jobType[0].user.description || "No personal description provided."}
+    ${job.jobType[0].user.description || 'No personal description provided.'}
 
     **Job Type Description**: 
     This is a refined description of the type of job I am specifically seeking:
-    ${allDescriptions || "No job type description provided."}
+    ${allDescriptions || 'No job type description provided.'}
 
-    Please analyze the information above and strictly compare it against the **job description** provided below. Do not use the job description to infer any details about me as a candidate.
+    Please analyze the Candidate CV and Candidate Description above and strictly compare it against the **job description** provided below. Do not use the job description to infer any details about me as a candidate. The Job Type Description is used as supplementary information so it should not be used as strictly compared to the candidate CV or Candidate Description.
 `;
   }
 
@@ -86,8 +86,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
               properties: {
                 analysis: {
                   type: 'string',
-                  description:
-                    `Analysis: The detailed evaluation of how well the candidate aligns with the job description. This should determine the candidate's fit for the role, focusing on their ability to meet the requirements and expectations outlined in the job description. The analysis should:
+                  description: `Analysis: The detailed evaluation of how well the candidate aligns with the job description. This should determine the candidate's fit for the role, focusing on their ability to meet the requirements and expectations outlined in the job description. The analysis should:
                     - Assess qualifications, experience, and potential for growth based strictly on the provided information.
                     - Identify gaps or missing information that hinder determining fit, explicitly penalizing incomplete or vague inputs.
                     - Avoid inferring or making assumptions about the candidate beyond what is explicitly stated.
@@ -133,7 +132,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
                 'suitabilityScore',
                 'conciseDescription',
                 'conciseSuited',
-                'biggerAreaOfImprovement'
+                'biggerAreaOfImprovement',
               ],
               additionalProperties: false, // Prevent additional properties
             },

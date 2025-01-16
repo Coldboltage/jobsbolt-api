@@ -79,7 +79,6 @@ export class JobTypeService implements OnApplicationBootstrap {
 
     const { id, name, location } = jobTypeEntity;
 
-
     const formattedJobType: {
       jobTypeId: string;
       name: string;
@@ -90,11 +89,9 @@ export class JobTypeService implements OnApplicationBootstrap {
       name,
       location,
       firstTime: true,
-    }
-
+    };
 
     console.log(formattedJobType);
-
 
     this.client.emit<{
       jobTypeId: string;
@@ -102,7 +99,6 @@ export class JobTypeService implements OnApplicationBootstrap {
       location: string;
       firstTime: boolean;
     }>('createJobSearch', formattedJobType);
-
   }
 
   async create(
@@ -121,7 +117,7 @@ export class JobTypeService implements OnApplicationBootstrap {
     });
 
     const savedEntity = await this.jobTypeRepository.save(jobTypeEntity);
-    await this.checkSingleJobType(savedEntity)
+    await this.checkSingleJobType(savedEntity);
     return savedEntity;
   }
 
@@ -144,8 +140,8 @@ export class JobTypeService implements OnApplicationBootstrap {
       },
       where: {
         user: {
-          id: userId
-        }
+          id: userId,
+        },
       },
     });
   }
@@ -178,8 +174,8 @@ export class JobTypeService implements OnApplicationBootstrap {
   }
 
   async update(id: string, updateJobTypeDto: UpdateJobTypeDto) {
-    console.log(id)
-    console.log(updateJobTypeDto)
+    console.log(id);
+    console.log(updateJobTypeDto);
     return this.jobTypeRepository.update({ id }, updateJobTypeDto);
   }
 

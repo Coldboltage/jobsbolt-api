@@ -9,6 +9,7 @@ import {
   DeepPartial,
   In,
   IsNull,
+  MoreThan,
   MoreThanOrEqual,
   Not,
   Repository,
@@ -110,7 +111,7 @@ export class JobService implements OnApplicationBootstrap {
     const suitabilityScore = content.suitabilityScore;
     const conciseDescription = content.conciseDescription;
     const conciseSuited = content.conciseSuited;
-    const { biggerAreaOfImprovement } = content
+    const { biggerAreaOfImprovement } = content;
 
     const object: CompleteJobParse = {
       jobId,
@@ -197,6 +198,7 @@ export class JobService implements OnApplicationBootstrap {
         jobType: [jobTypeEntity],
         scannedLast: null,
         companyName: job.companyName,
+        firstAdded: new Date(),
       });
       console.log(`${jobEntity.indeedId} added`);
     }
@@ -204,7 +206,7 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   async addJobManually(manualJobDto: ManualJobDto): Promise<Job> {
-    console.log(manualJobDto)
+    console.log(manualJobDto);
     const checkJobLink = await this.jobRepository.findOne({
       where: {
         jobType: {
@@ -217,7 +219,7 @@ export class JobService implements OnApplicationBootstrap {
       },
     });
 
-    console.log(checkJobLink)
+    console.log(checkJobLink);
     if (checkJobLink) {
       throw new ConflictException('job_already_exists');
     }
@@ -258,26 +260,30 @@ export class JobService implements OnApplicationBootstrap {
   async sendDiscordNewJobMessage(): Promise<void> {
     const users = await this.userService.findUsersWithUnsendSuitableJobs();
 
-    const acceptedUser = users.filter(user => {
-      if (user.roles.includes(Role.ADMIN) || user.jobType.some(jobType => jobType.nextScan === null)) return true
+    const acceptedUser = users.filter((user) => {
+      if (
+        user.roles.includes(Role.ADMIN) ||
+        user.jobType.some((jobType) => jobType.nextScan === null)
+      )
+        return true;
 
       return user.jobType.some((jobType) => {
-        if (jobType.nextScan === null) return true
-        const thresholdDate = new Date()
+        if (jobType.nextScan === null) return true;
+        const thresholdDate = new Date();
         thresholdDate.setHours(12, 0, 0, 0);
-        return thresholdDate > jobType.nextScan
-      })
-    })
+        return thresholdDate > jobType.nextScan;
+      });
+    });
 
     for (const user of acceptedUser) {
-      const jobTypesForUser = user.jobType
+      const jobTypesForUser = user.jobType;
 
       const expiredJobTypeScans = jobTypesForUser.filter((jobType) => {
-        if (jobType.nextScan === null) return true
-        const thresholdDate = new Date()
+        if (jobType.nextScan === null) return true;
+        const thresholdDate = new Date();
         thresholdDate.setHours(12, 0, 0, 0);
-        return thresholdDate > jobType.nextScan
-      })
+        return thresholdDate > jobType.nextScan;
+      });
 
       const bestJobs = await this.findUsersBestFiveJobs(user.id);
       const manualJobs = await this.findUserManualJobs(user.id);
@@ -287,18 +293,20 @@ export class JobService implements OnApplicationBootstrap {
       if (user.discordId) {
         this.discordService.sendMessage(user.discordId, allJobs);
       }
-      const updatePromiseList: Promise<UpdateResult>[] = []
+      const updatePromiseList: Promise<UpdateResult>[] = [];
 
       for (const jobType of expiredJobTypeScans) {
-        console.error("hello alan")
-        const nextScan = new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
-        console.log()
+        console.error('hello alan');
+        const nextScan = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+        console.log();
         nextScan.setHours(12, 0, 0, 0);
-        console.log(nextScan.toISOString())
-        updatePromiseList.push(this.jobTypeService.update(jobType.id, { nextScan }))
+        console.log(nextScan.toISOString());
+        updatePromiseList.push(
+          this.jobTypeService.update(jobType.id, { nextScan }),
+        );
       }
 
-      await Promise.all(updatePromiseList)
+      await Promise.all(updatePromiseList);
     }
   }
 
@@ -450,7 +458,9 @@ export class JobService implements OnApplicationBootstrap {
     return allJobsToSend;
   }
 
-  async findUsersBestFiveJobs(id): Promise<Job[]> {
+  async findUsersBestFiveJobs(id: string): Promise<Job[]> {
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - 14);
     return this.jobRepository.find({
       order: {
         suitabilityScore: 'DESC',
@@ -468,9 +478,10 @@ export class JobService implements OnApplicationBootstrap {
             id: id,
           },
         },
-        suitabilityScore: MoreThanOrEqual(85),
+        suitabilityScore: MoreThanOrEqual(75),
         suited: true,
         notification: false,
+        firstAdded: MoreThan(thresholdDate),
       },
     });
   }
@@ -711,5 +722,47 @@ export class JobService implements OnApplicationBootstrap {
 
     jobEntity.applied = status;
     return this.jobRepository.save(jobEntity);
+  }
+
+  async resetAILookup(userId: string) {
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - 14);
+    return this.jobRepository.find({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+        notification: false,
+        scannedLast: MoreThan(thresholdDate),
+      },
+      select: {
+        id: true,
+        jobType: {
+          id: true,
+          user: {
+            id: true,
+          },
+        },
+      },
+    });
+  }
+
+  async resetSelectedJobs(jobs: Job[]) {
+    jobs.forEach((job) => {
+      job.scannedLast = null;
+    });
+    return this.jobRepository.save(jobs);
+  }
+
+  async resetAILookupFullRun(userId: string) {
+    const resetJobs = await this.resetAILookup(userId);
+    return this.resetSelectedJobs(resetJobs);
   }
 }
