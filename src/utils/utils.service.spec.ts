@@ -294,9 +294,11 @@ describe('UtilsService', () => {
       expect(response).toContain(
         `Here is a personal description of myself, which reflects my most recent thoughts on what I am looking for in a job:`,
       );
-      expect(response).toContain(`This is a refined description of the type of job I am specifically seeking:`);
       expect(response).toContain(
-        `Please analyze the information above and strictly compare it against the **job description** provided below. Do not use the job description to infer any details about me as a candidate.`,
+        `This is a refined description of the type of job I am specifically seeking:`,
+      );
+      expect(response).toContain(
+        `Please analyze the Candidate CV and Candidate Description above and strictly compare it against the **job description** provided below. Do not use the job description to infer any details about me as a candidate. The Job Type Description is used as supplementary information so it should not be used as strictly compared to the candidate CV or Candidate Description.`,
       );
     });
   });

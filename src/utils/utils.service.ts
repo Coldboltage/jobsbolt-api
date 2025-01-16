@@ -23,7 +23,8 @@ export class UtilsService {
 
     const allDescriptions = jobTypeDescriptions.join('\n');
 
-    return `Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. To be clear, what I have stated is the job description so far, and nothing about the user. 
+    return `
+    Here is a job I'm looking to apply for Job Description: ${job.description} Job Pay: ${job.pay} Job Location: ${job.location}. To be clear, what I have stated is the job description so far, and nothing about the user. 
 
     **Candidate CV**: 
     The following represents my resume or CV, which outlines my professional experience and qualifications: 

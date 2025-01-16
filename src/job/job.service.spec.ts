@@ -31,8 +31,7 @@ import { JobType } from '../job-type/entities/job-type.entity';
 import { PayUnits } from '../job-type/types';
 import { User } from '../user/entities/user.entity';
 import OpenAI from 'openai';
-import { Role } from '../auth/role.enum';
-import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
+
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
 import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
@@ -174,7 +173,7 @@ describe('JobService', () => {
       suitabilityScore: 95,
       conciseDescription: faker.lorem.sentence(),
       conciseSuited: faker.lorem.sentence(),
-      biggerAreaOfImprovement: faker.lorem.sentence()
+      biggerAreaOfImprovement: faker.lorem.sentence(),
     };
   };
 
@@ -585,7 +584,7 @@ describe('JobService', () => {
         indeedId: mockJobInfo.indeedId,
         link: `https://www.indeed.com/viewjob?jk=${mockJobInfo.indeedId}`,
         name: mockJobInfo.name,
-        date: expect.any(Date), // You can use `expect.any(Date)` if the exact date is not crucial
+        date: expect.any(Date),
         description: mockJobInfo.description,
         pay: mockJobInfo.pay,
         location: mockJobInfo.location,
@@ -593,6 +592,7 @@ describe('JobService', () => {
         jobType: [mockJobTypeEntity], // The jobType entity returned from findOne
         scannedLast: null, // Static value as per your implementation
         companyName: mockJobInfo.companyName,
+        firstAdded: expect.any(Date),
       });
       expect(jobTypeEntitySpy).toHaveBeenCalled();
       expect(jobTypeEntitySpy).toHaveBeenCalledWith(mockJobTypeEntity.id);
@@ -615,6 +615,7 @@ describe('JobService', () => {
         jobType: [mockJobTypeEntity],
         scannedLast: null,
         companyName: mockJob.companyName,
+        firstAdded: expect.any(Date),
       });
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('array for newJobs'),
@@ -659,8 +660,8 @@ describe('JobService', () => {
         suitabilityScore: 0,
         interested: null,
         manual: false,
-        biggerAreaOfImprovement: ''
-
+        biggerAreaOfImprovement: '',
+        firstAdded: new Date(),
       };
 
       const existingJobEntityTwo: Job = {
@@ -685,7 +686,8 @@ describe('JobService', () => {
         suitabilityScore: 0,
         interested: null,
         manual: false,
-        biggerAreaOfImprovement: ''
+        biggerAreaOfImprovement: '',
+        firstAdded: new Date(),
       };
 
       const jobTypeEntitySpy = jest
@@ -721,7 +723,7 @@ describe('JobService', () => {
         desiredPay: 0,
         desiredPayUnit: PayUnits.HOURLY,
         description: '',
-        nextScan: new Date()
+        nextScan: new Date(),
       };
 
       const mockJobInfo: JobInfoInterface = {
@@ -789,7 +791,7 @@ describe('JobService', () => {
         desiredPay: 0,
         desiredPayUnit: PayUnits.HOURLY,
         description: '',
-        nextScan: new Date()
+        nextScan: new Date(),
       };
 
       const mockJobInfo: JobInfoInterface = {
@@ -857,7 +859,7 @@ describe('JobService', () => {
       desiredPay: 0,
       desiredPayUnit: PayUnits.MONTHLY,
       description: '',
-      nextScan: new Date()
+      nextScan: new Date(),
     };
 
     const jobEntity: Job = {
@@ -882,7 +884,8 @@ describe('JobService', () => {
       suitabilityScore: 95,
       interested: null,
       manual: false,
-      biggerAreaOfImprovement: ''
+      biggerAreaOfImprovement: '',
+      firstAdded: new Date(),
     };
     it('should find all jobs available for a scan', async () => {
       // Arrange
@@ -909,7 +912,8 @@ describe('JobService', () => {
   describe('sendDiscordNewJobMessage', () => {
     it('should send job messages to users', async () => {
       // Arrange
-      const { mockUser, mockJobTypeEntity, mockJob } = createFullUserWithDetails();
+      const { mockUser, mockJobTypeEntity, mockJob } =
+        createFullUserWithDetails();
 
       mockJob.suited = true;
       mockJob.notification = false;
@@ -918,10 +922,10 @@ describe('JobService', () => {
       mockJob.conciseSuited = faker.lorem.sentence();
       mockJob.suitabilityScore = 95;
 
-      const manualMockJob = structuredClone(mockJob)
-      manualMockJob.manual = true
+      const manualMockJob = structuredClone(mockJob);
+      manualMockJob.manual = true;
 
-      mockJobTypeEntity.nextScan = new Date("2022-03-25")
+      mockJobTypeEntity.nextScan = new Date('2022-03-25');
 
       const findUsersWithUnsendSuitableJobsSpy = jest
         .spyOn(userService, 'findUsersWithUnsendSuitableJobs')
@@ -1549,7 +1553,7 @@ describe('JobService', () => {
           conciseDescription: jobParsed.conciseDescription,
           scannedLast: expect.any(Date),
           conciseSuited: jobParsed.conciseSuited,
-          biggerAreaOfImprovement: jobParsed.biggerAreaOfImprovement
+          biggerAreaOfImprovement: jobParsed.biggerAreaOfImprovement,
         },
       );
       expect(response).toEqual({
@@ -1924,7 +1928,8 @@ describe('JobService', () => {
         interested: false,
         manual: mockJob.manual,
         coverLetter: null,
-        biggerAreaOfImprovement: ''
+        biggerAreaOfImprovement: '',
+        firstAdded: new Date(),
       };
 
       const checkJobSpy = jest
