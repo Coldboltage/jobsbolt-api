@@ -478,7 +478,7 @@ export class JobService implements OnApplicationBootstrap {
             id: id,
           },
         },
-        suitabilityScore: MoreThanOrEqual(75),
+        suitabilityScore: MoreThanOrEqual(65),
         suited: true,
         notification: false,
         firstAdded: MoreThan(thresholdDate),

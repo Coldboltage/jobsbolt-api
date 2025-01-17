@@ -148,8 +148,7 @@ describe('UtilsService', () => {
               properties: {
                 analysis: {
                   type: 'string',
-                  description:
-                    `Analysis: The detailed evaluation of how well the candidate aligns with the job description. This should determine the candidate's fit for the role, focusing on their ability to meet the requirements and expectations outlined in the job description. The analysis should:
+                  description: `Analysis: The detailed evaluation of how well the candidate aligns with the job description. This should determine the candidate's fit for the role, focusing on their ability to meet the requirements and expectations outlined in the job description. The analysis should:
                     - Assess qualifications, experience, and potential for growth based strictly on the provided information.
                     - Identify gaps or missing information that hinder determining fit, explicitly penalizing incomplete or vague inputs.
                     - Avoid inferring or making assumptions about the candidate beyond what is explicitly stated.
@@ -195,7 +194,7 @@ describe('UtilsService', () => {
                 'suitabilityScore',
                 'conciseDescription',
                 'conciseSuited',
-                'biggerAreaOfImprovement'
+                'biggerAreaOfImprovement',
               ],
               additionalProperties: false,
             },
