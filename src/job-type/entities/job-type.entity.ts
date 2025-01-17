@@ -33,6 +33,9 @@ export class JobType {
   @Column()
   date: Date;
 
+  @Column({ nullable: true })
+  nextScan: Date;
+
   @Column()
   active: boolean;
 

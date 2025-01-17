@@ -92,6 +92,10 @@ export class Job {
 
   @Column('date', { nullable: true })
   @ApiProperty()
+  firstAdded: Date;
+
+  @Column('date', { nullable: true })
+  @ApiProperty()
   scannedLast: Date;
 
   @Column({ default: false })
@@ -205,14 +209,13 @@ export interface ChatCompletionMessage {
 // }
 
 export interface CompleteJobParse {
-  indeedId: string;
+  jobId: string;
   summary: string;
   suited: boolean;
   suitabilityScore: number;
   conciseDescription: string;
   conciseSuited: string;
   biggerAreaOfImprovement: string;
-
 }
 
 export interface ParsedJobContent {
@@ -238,6 +241,7 @@ export interface JobJson {
   method: string;
   url: string;
   body: {
+    temperature: number;
     model: string;
     messages: Array<{
       role: 'system' | 'user';

@@ -301,7 +301,8 @@ describe('CoverLetterService', () => {
         suitabilityScore: 95,
         interested: null,
         manual: false,
-        biggerAreaOfImprovement: ''
+        biggerAreaOfImprovement: '',
+        firstAdded: new Date(),
       };
 
       const findOne = jest
