@@ -31,8 +31,7 @@ import { JobType } from '../job-type/entities/job-type.entity';
 import { PayUnits } from '../job-type/types';
 import { User } from '../user/entities/user.entity';
 import OpenAI from 'openai';
-import { Role } from '../auth/role.enum';
-import * as fs from 'fs/promises'; // Import from 'fs/promises' for async/await usage
+
 import { UserService } from '../user/user.service';
 import { DiscordService } from '../discord/discord.service';
 import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
@@ -174,7 +173,7 @@ describe('JobService', () => {
       suitabilityScore: 95,
       conciseDescription: faker.lorem.sentence(),
       conciseSuited: faker.lorem.sentence(),
-      biggerAreaOfImprovement: faker.lorem.sentence()
+      biggerAreaOfImprovement: faker.lorem.sentence(),
     };
   };
 
@@ -509,7 +508,7 @@ describe('JobService', () => {
       );
 
       const answer: CompleteJobParse = {
-        indeedId: mockJob.custom_id,
+        jobId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: mockContent.is_suitable,
         suitabilityScore: mockContent.suitabilityScore,
@@ -533,7 +532,7 @@ describe('JobService', () => {
       );
 
       const answer: CompleteJobParse = {
-        indeedId: mockJob.custom_id,
+        jobId: mockJob.custom_id,
         summary: mockContent.analysis,
         suited: jobSuitedState,
         suitabilityScore: mockContent.suitabilityScore,
@@ -585,7 +584,7 @@ describe('JobService', () => {
         indeedId: mockJobInfo.indeedId,
         link: `https://www.indeed.com/viewjob?jk=${mockJobInfo.indeedId}`,
         name: mockJobInfo.name,
-        date: expect.any(Date), // You can use `expect.any(Date)` if the exact date is not crucial
+        date: expect.any(Date),
         description: mockJobInfo.description,
         pay: mockJobInfo.pay,
         location: mockJobInfo.location,
@@ -593,6 +592,7 @@ describe('JobService', () => {
         jobType: [mockJobTypeEntity], // The jobType entity returned from findOne
         scannedLast: null, // Static value as per your implementation
         companyName: mockJobInfo.companyName,
+        firstAdded: expect.any(Date),
       });
       expect(jobTypeEntitySpy).toHaveBeenCalled();
       expect(jobTypeEntitySpy).toHaveBeenCalledWith(mockJobTypeEntity.id);
@@ -615,6 +615,7 @@ describe('JobService', () => {
         jobType: [mockJobTypeEntity],
         scannedLast: null,
         companyName: mockJob.companyName,
+        firstAdded: expect.any(Date),
       });
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('array for newJobs'),
@@ -659,8 +660,8 @@ describe('JobService', () => {
         suitabilityScore: 0,
         interested: null,
         manual: false,
-        biggerAreaOfImprovement: ''
-
+        biggerAreaOfImprovement: '',
+        firstAdded: new Date(),
       };
 
       const existingJobEntityTwo: Job = {
@@ -685,7 +686,8 @@ describe('JobService', () => {
         suitabilityScore: 0,
         interested: null,
         manual: false,
-        biggerAreaOfImprovement: ''
+        biggerAreaOfImprovement: '',
+        firstAdded: new Date(),
       };
 
       const jobTypeEntitySpy = jest
@@ -721,6 +723,7 @@ describe('JobService', () => {
         desiredPay: 0,
         desiredPayUnit: PayUnits.HOURLY,
         description: '',
+        nextScan: new Date(),
       };
 
       const mockJobInfo: JobInfoInterface = {
@@ -788,6 +791,7 @@ describe('JobService', () => {
         desiredPay: 0,
         desiredPayUnit: PayUnits.HOURLY,
         description: '',
+        nextScan: new Date(),
       };
 
       const mockJobInfo: JobInfoInterface = {
@@ -855,6 +859,7 @@ describe('JobService', () => {
       desiredPay: 0,
       desiredPayUnit: PayUnits.MONTHLY,
       description: '',
+      nextScan: new Date(),
     };
 
     const jobEntity: Job = {
@@ -879,7 +884,8 @@ describe('JobService', () => {
       suitabilityScore: 95,
       interested: null,
       manual: false,
-      biggerAreaOfImprovement: ''
+      biggerAreaOfImprovement: '',
+      firstAdded: new Date(),
     };
     it('should find all jobs available for a scan', async () => {
       // Arrange
@@ -906,7 +912,8 @@ describe('JobService', () => {
   describe('sendDiscordNewJobMessage', () => {
     it('should send job messages to users', async () => {
       // Arrange
-      const { mockUser, mockJob } = createFullUserWithDetails();
+      const { mockUser, mockJobTypeEntity, mockJob } =
+        createFullUserWithDetails();
 
       mockJob.suited = true;
       mockJob.notification = false;
@@ -915,8 +922,10 @@ describe('JobService', () => {
       mockJob.conciseSuited = faker.lorem.sentence();
       mockJob.suitabilityScore = 95;
 
-      const manualMockJob = structuredClone(mockJob)
-      manualMockJob.manual = true
+      const manualMockJob = structuredClone(mockJob);
+      manualMockJob.manual = true;
+
+      mockJobTypeEntity.nextScan = new Date('2022-03-25');
 
       const findUsersWithUnsendSuitableJobsSpy = jest
         .spyOn(userService, 'findUsersWithUnsendSuitableJobs')
@@ -949,6 +958,38 @@ describe('JobService', () => {
       const findUsersWithUnsendSuitableJobsSpy = jest
         .spyOn(userService, 'findUsersWithUnsendSuitableJobs')
         .mockResolvedValueOnce([]);
+
+      const findUsersBestFiveJobsSpy = jest.spyOn(
+        service,
+        'findUsersBestFiveJobs',
+      );
+
+      const discordServiceSendMessageSpy = jest.spyOn(
+        discordService,
+        'sendMessage',
+      );
+      // Act
+      await service.sendDiscordNewJobMessage();
+      // Assert
+      expect(findUsersWithUnsendSuitableJobsSpy).toHaveBeenCalled();
+      expect(findUsersBestFiveJobsSpy).not.toHaveBeenCalled();
+      expect(discordServiceSendMessageSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not fire because last scan too recent', async () => {
+      // Arrange
+      const { mockUser, mockJob } = createFullUserWithDetails();
+
+      mockJob.suited = true;
+      mockJob.notification = false;
+      mockJob.summary = faker.lorem.paragraphs();
+      mockJob.conciseDescription = faker.lorem.paragraph();
+      mockJob.conciseSuited = faker.lorem.sentence();
+      mockJob.suitabilityScore = 95;
+
+      const findUsersWithUnsendSuitableJobsSpy = jest
+        .spyOn(userService, 'findUsersWithUnsendSuitableJobs')
+        .mockResolvedValueOnce([mockUser]);
 
       const findUsersBestFiveJobsSpy = jest.spyOn(
         service,
@@ -1480,34 +1521,45 @@ describe('JobService', () => {
       mockJob.scannedLast = new Date();
       mockJob.suited = true;
 
+      const jobParsed: CompleteJobParse = {
+        jobId: mockJob.id,
+        summary: mockJob.summary,
+        suited: mockJob.suited,
+        suitabilityScore: mockJob.suitabilityScore,
+        conciseDescription: mockJob.conciseDescription,
+        conciseSuited: mockJob.conciseSuited,
+        biggerAreaOfImprovement: mockJob.biggerAreaOfImprovement,
+      };
+
       const jobRepoUpdateSpy = jest
         .spyOn(jobRepository, 'update')
         .mockResolvedValueOnce({
           raw: [],
           affected: 1,
-          generatedMaps: [mockJob],
+          generatedMaps: [jobParsed],
         } as UpdateResult);
       // Act
 
-      const response = await service.updateFromCompleteJobParse(mockJob);
+      const response = await service.updateFromCompleteJobParse(jobParsed);
 
       // Assert
       expect(jobRepoUpdateSpy).toHaveBeenCalled();
       expect(jobRepoUpdateSpy).toHaveBeenCalledWith(
-        { indeedId: mockJob.indeedId },
+        { id: jobParsed.jobId },
         {
-          summary: mockJob.summary,
-          suited: mockJob.suited,
-          suitabilityScore: mockJob.suitabilityScore,
-          conciseDescription: mockJob.conciseDescription,
+          summary: jobParsed.summary,
+          suited: jobParsed.suited,
+          suitabilityScore: jobParsed.suitabilityScore,
+          conciseDescription: jobParsed.conciseDescription,
           scannedLast: expect.any(Date),
-          conciseSuited: mockJob.conciseSuited,
+          conciseSuited: jobParsed.conciseSuited,
+          biggerAreaOfImprovement: jobParsed.biggerAreaOfImprovement,
         },
       );
       expect(response).toEqual({
         raw: [],
         affected: 1,
-        generatedMaps: [mockJob],
+        generatedMaps: [jobParsed],
       } as UpdateResult);
     });
   });
@@ -1600,7 +1652,7 @@ describe('JobService', () => {
                 id: mockUser.id,
               }),
             }),
-            suitabilityScore: MoreThanOrEqual(85), // Ensure this is the same instance
+            suitabilityScore: MoreThanOrEqual(65), // Ensure this is the same instance
             suited: true,
             notification: false,
           }),
@@ -1876,7 +1928,8 @@ describe('JobService', () => {
         interested: false,
         manual: mockJob.manual,
         coverLetter: null,
-        biggerAreaOfImprovement: ''
+        biggerAreaOfImprovement: '',
+        firstAdded: new Date(),
       };
 
       const checkJobSpy = jest

@@ -359,6 +359,48 @@ export class JobController {
   @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({
+    summary:
+      'Get jobs which have not been notified yet and are within 14 days of adding',
+  })
+  @ApiOkResponse({
+    description: 'All jobs to set for user',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  @Get('reset-jobs-ai')
+  resetAILookup(@Req() req) {
+    return this.jobService.resetAILookup(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Fully reset jobs which have not been notified yet and are within 14 days of adding',
+  })
+  @ApiOkResponse({
+    description: 'All jobs to reset for user',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  @Post('reset-jobs-ai-full-reset')
+  resetAILookupFullRun(@Req() req) {
+    return this.jobService.resetAILookupFullRun(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
     summary: 'Get a specific job for a user',
   })
   @ApiOkResponse({
