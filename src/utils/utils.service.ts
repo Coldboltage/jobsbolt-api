@@ -120,7 +120,7 @@ Goal: The generated cover letter should reflect the user's personal voice and st
                 },
                 biggerAreaOfImprovement: {
                   type: 'string',
-                  description: `Based on the provided analysis, identify the single biggest area of improvement the user can work on based on their CV and description versus the Job Description, so they know what single thing they can do to help with their job hunting endeavours.`,
+                  description: `Identify the single most impactful area the user should focus on improving to strengthen their job prospects. Clearly justify the recommendation by explaining whether it is due to a lack of relevant experience, skills, or clarity in the provided CV or Candidate Description. Reference specific details or gaps that led to this recommendation, and if the suggestion is based on a perceived lack of emphasis rather than an actual gap, explain how the user can better highlight their experience to address the concern. Ensure the reasoning provides actionable insights the user can use to update their CV or Candidate Description effectively.`,
                 },
                 conciseSuited: {
                   type: 'string',
