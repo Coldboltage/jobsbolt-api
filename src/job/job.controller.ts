@@ -401,6 +401,28 @@ export class JobController {
   @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({
+    summary:
+      'Find the best jobs for the user which they have not been notified about',
+  })
+  @ApiOkResponse({
+    description: 'Found jobs that are best for user not notified of yet',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  @Get('find-new-best-jobs-not-notified')
+  findUsersBestFiveJobs(@Req() req) {
+    console.log("Hello Alan")
+    return this.jobService.findUsersBestFiveJobs(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
     summary: 'Get a specific job for a user',
   })
   @ApiOkResponse({
