@@ -68,3 +68,4 @@ docker/**/backups/
 
 # Backup
 /backups
+src/utils/cover-requests.jsonl
