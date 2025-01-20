@@ -461,7 +461,7 @@ export class JobService implements OnApplicationBootstrap {
   async findUsersBestFiveJobs(id: string): Promise<Job[]> {
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() - 14);
-    return this.jobRepository.find({
+    const test = await this.jobRepository.find({
       order: {
         suitabilityScore: 'DESC',
       },
@@ -475,7 +475,7 @@ export class JobService implements OnApplicationBootstrap {
         jobType: {
           active: true,
           user: {
-            id: id,
+            id,
           },
         },
         suitabilityScore: MoreThanOrEqual(65),
@@ -484,9 +484,16 @@ export class JobService implements OnApplicationBootstrap {
         firstAdded: MoreThan(thresholdDate),
       },
     });
+    for (const job of test) {
+      console.log(`Threshold Date: ${thresholdDate}`)
+      console.log(`Job firstAdded Date: ${job.firstAdded}`)
+      console.log(`Is Job firstAdded date greater than threshold: ${new Date(job.firstAdded) > thresholdDate}`)
+    }
+
+    return test
   }
 
-  async findUserManualJobs(id): Promise<Job[]> {
+  async findUserManualJobs(id: string): Promise<Job[]> {
     return this.jobRepository.find({
       order: {
         suitabilityScore: 'DESC',
@@ -744,6 +751,8 @@ export class JobService implements OnApplicationBootstrap {
       },
       select: {
         id: true,
+        firstAdded: true,
+        scannedLast: true,
         jobType: {
           id: true,
           user: {
@@ -757,6 +766,7 @@ export class JobService implements OnApplicationBootstrap {
   async resetSelectedJobs(jobs: Job[]) {
     jobs.forEach((job) => {
       job.scannedLast = null;
+      job.firstAdded = job.firstAdded === null ? new Date() : job.firstAdded;
     });
     return this.jobRepository.save(jobs);
   }
