@@ -64,7 +64,7 @@ export class JobService implements OnApplicationBootstrap {
     }
   }
 
-  async countTokensForUser(users: User[]): Promise<Job[]> {
+  async jobsAfterCredit(users: User[]): Promise<Job[]> {
     const totalJobs: Job[] = [];
     for (const user of users) {
       const { description, cv, userTalk, credit } = user;
@@ -81,7 +81,9 @@ export class JobService implements OnApplicationBootstrap {
       const totalPrice = amountUserTokensInPounds + amountOutputTokens;
 
       const flatMapJobs = user.jobType;
-      const uniqueJobs = Array.from(new Set(flatMapJobs[0].jobs));
+      const uniqueJobs = Array.from(
+        new Set(flatMapJobs[0].jobs.filter((job) => job.scannedLast !== null)),
+      );
       let creditRemaining = credit;
 
       for (const job of uniqueJobs) {
@@ -104,22 +106,22 @@ export class JobService implements OnApplicationBootstrap {
 
   async createBatchJob() {
     // Get all users which need to be scanned
-    const unscannedUsers = await this.userService.findAllUnscannedJobsUsers();
+    const unscannedUsers = await this.userService.findAllUnscannedJobsUsers(); // Needs to be checked
     // Get only the amount of jobs needed and calculate
-    const test = await this.countTokensForUser(unscannedUsers);
+    const availableJobs = await this.jobsAfterCredit(unscannedUsers);
 
     // Old Version
-    const newJobs = await this.scanAvailableJobs();
+    // const newJobs = await this.scanAvailableJobs();
 
     // update scans for jobs
-    newJobs.forEach((job) => (job.scannedLast = new Date()));
+    availableJobs.forEach((job) => (job.scannedLast = new Date()));
 
-    if (!newJobs || newJobs.length === 0) {
+    if (!availableJobs || availableJobs.length === 0) {
       console.log('no new jobs');
       return null;
     }
-    console.log('new jobs found adding them');
-    const updatedNewJobs = await this.jobRepository.save(newJobs);
+    console.log('availableJobs found adding them');
+    const updatedNewJobs = await this.jobRepository.save(availableJobs);
 
     await this.utilService.buildJsonLd(updatedNewJobs, 'job');
 
