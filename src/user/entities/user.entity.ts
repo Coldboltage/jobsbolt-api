@@ -39,6 +39,12 @@ export class User {
 
   @OneToMany(() => JobType, (jobType) => jobType.user)
   jobType: JobType[];
+
+  @Column({ nullable: true, default: false })
+  availableJobs: boolean;
+
+  @Column({ nullable: true, default: false })
+  credit: number;
 }
 
 export interface SlimUser {
