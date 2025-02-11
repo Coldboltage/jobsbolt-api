@@ -292,7 +292,7 @@ export class JobService implements OnApplicationBootstrap {
       companyName: manualJobDto.companyName,
       manual: true,
     });
-    await this.userService.update(newJob.jobType[0].user.id, {
+    await this.userService.update(jobEntity.user.id, {
       availableJobs: true,
     });
 
