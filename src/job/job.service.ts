@@ -93,7 +93,7 @@ export class JobService implements OnApplicationBootstrap {
           break;
         }
         totalJobs.push(job);
-        creditRemaining = -totalPrice;
+        creditRemaining -= totalPrice;
       }
       // The user has scanned all the jobs and has remaining cash, therefore no more availableJobs.
       await this.userService.update(user.id, {
@@ -105,13 +105,14 @@ export class JobService implements OnApplicationBootstrap {
   }
 
   async createBatchJob() {
+    // // THIS WILL BE USED IN THE FUTURE WHENEVER WE HAVE USER CREDITS SORTED. NEEDS TO BE EXTENSIVELY TESTED
     // Get all users which need to be scanned
-    const unscannedUsers = await this.userService.findAllUnscannedJobsUsers(); // Needs to be checked
+    // const unscannedUsers = await this.userService.findAllUnscannedJobsUsers(); // Needs to be checked
     // Get only the amount of jobs needed and calculate
-    const availableJobs = await this.jobsAfterCredit(unscannedUsers);
+    // const availableJobs = await this.jobsAfterCredit(unscannedUsers);
 
     // Old Version
-    // const newJobs = await this.scanAvailableJobs();
+    const availableJobs = await this.scanAvailableJobs();
 
     // update scans for jobs
     availableJobs.forEach((job) => (job.scannedLast = new Date()));

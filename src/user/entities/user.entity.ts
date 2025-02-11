@@ -43,7 +43,7 @@ export class User {
   @Column({ nullable: true, default: false })
   availableJobs: boolean;
 
-  @Column({ nullable: true, default: false })
+  @Column('float', { nullable: true, default: 0 })
   credit: number;
 }
 
