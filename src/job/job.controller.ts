@@ -415,8 +415,27 @@ export class JobController {
   })
   @Get('find-new-best-jobs-not-notified')
   findUsersBestFiveJobs(@Req() req) {
-    console.log("Hello Alan")
     return this.jobService.findUsersBestFiveJobs(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Find all the recent jobs for a user within the last 14 days',
+  })
+  @ApiOkResponse({
+    description: 'Found all the recent jobs for a user within the last 14 days',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  @Get('find-recent-jobs-user')
+  findUserRecentJobs(@Req() req) {
+    return this.jobService.findUserRecentJobs(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
