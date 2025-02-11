@@ -574,6 +574,32 @@ export class JobService implements OnApplicationBootstrap {
     });
   }
 
+  async findUserRecentJobs(userId: string): Promise<Job[]> {
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - 14);
+    const recentJobs = await this.jobRepository.find({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        suited: true,
+        scannedLast: MoreThan(thresholdDate),
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+      },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
+      },
+    });
+    return recentJobs;
+  }
+
   async jobInterestState(id, jobId, interestedState): Promise<Job> {
     const jobEntity = await this.jobRepository.findOne({
       relations: {
