@@ -251,7 +251,7 @@ export class JobService implements OnApplicationBootstrap {
       });
       console.log(`${jobEntity.indeedId} added`);
     }
-    await this.userService.update(jobEntity.jobType[0].user.id, {
+    await this.userService.update(jobTypeEntity.user.id, {
       availableJobs: true,
     });
     return;
