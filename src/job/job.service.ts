@@ -584,7 +584,6 @@ export class JobService implements OnApplicationBootstrap {
         },
       },
       where: {
-        suited: true,
         scannedLast: MoreThan(thresholdDate),
         jobType: {
           user: {
