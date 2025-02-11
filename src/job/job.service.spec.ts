@@ -1940,6 +1940,8 @@ describe('JobService', () => {
         .spyOn(jobRepository, 'save')
         .mockResolvedValueOnce(savedMockJob);
 
+      const updateUserCredit = jest.spyOn(userService, 'update')
+
       // Act
       const result = await service.addJobManually(mockJob);
 

@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { IsNull, MoreThan, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as pdfParse from 'pdf-parse';
 import { AuthService } from '../auth/auth.service';
@@ -13,7 +13,7 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private authService: AuthService
+    private authService: AuthService,
   ) { }
   async create(createUserDto: CreateUserDto) {
     const saltOrRounds = 10;
@@ -102,7 +102,7 @@ export class UserService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    return this.userRepository.update({ id }, updateUserDto)
+    return this.userRepository.update({ id }, updateUserDto);
   }
 
   remove(id: number) {
@@ -152,8 +152,25 @@ export class UserService {
   }
 
   async resetPassword(password: string, reset_token: string) {
-    const { passwordHash, email } = await this.authService.resetPassword(password, reset_token)
+    const { passwordHash, email } = await this.authService.resetPassword(
+      password,
+      reset_token,
+    );
     const user = await this.findOneByEmail(email);
     await this.updatePassword(user, passwordHash);
+  }
+
+  async findAllUnscannedJobsUsers() {
+    return this.userRepository.find({
+      relations: {
+        jobType: {
+          jobs: true,
+        },
+      },
+      where: {
+        availableJobs: true,
+        credit: MoreThan(2.5),
+      },
+    });
   }
 }

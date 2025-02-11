@@ -168,7 +168,14 @@ export class JobTypeService implements OnApplicationBootstrap {
   }
 
   async findOne(id: string) {
-    const jobTypeEntity = await this.jobTypeRepository.findOneBy({ id });
+    const jobTypeEntity = await this.jobTypeRepository.findOne({
+      relations: {
+        user: true,
+      },
+      where: {
+        id,
+      },
+    });
     if (!jobTypeEntity) throw new NotFoundException('jobType_not_found');
     return jobTypeEntity;
   }
