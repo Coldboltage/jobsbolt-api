@@ -34,7 +34,8 @@ import { UtilsService } from '../utils/utils.service';
 import { CoverLetter } from '../cover-letter/entities/cover-letter.entity';
 import { ManualJobDto } from './dto/manual-job.dto';
 import { Role } from '../auth/role.enum';
-import dayjs from 'dayjs';
+import { countTokens } from 'gpt-tokenizer';
+import { User } from '../user/entities/user.entity';
 const path = require('path');
 const fs = require('fs');
 
@@ -63,18 +64,65 @@ export class JobService implements OnApplicationBootstrap {
     }
   }
 
+  async jobsAfterCredit(users: User[]): Promise<Job[]> {
+    const totalJobs: Job[] = [];
+    for (const user of users) {
+      const { description, cv, userTalk, credit } = user;
+      const combineText = `${description} ${cv} ${userTalk}`;
+
+      const amountUserTokens = countTokens(combineText);
+      console.log(amountUserTokens);
+      const inputPrice = 1.25 / 1000000;
+      const amountUserTokensInPounds = amountUserTokens * inputPrice;
+
+      const outputPrice = 5.0 / 1000000;
+      const amountOutputTokens = 1000 / outputPrice;
+
+      const totalPrice = amountUserTokensInPounds + amountOutputTokens;
+
+      const flatMapJobs = user.jobType;
+      const uniqueJobs = Array.from(
+        new Set(flatMapJobs[0].jobs.filter((job) => job.scannedLast !== null)),
+      );
+      let creditRemaining = credit;
+
+      for (const job of uniqueJobs) {
+        if (creditRemaining <= 2.5) {
+          // The user does not have enough credit anymore. They still have available jobs, but lack the funds.
+          await this.userService.update(user.id, { credit: creditRemaining });
+          break;
+        }
+        totalJobs.push(job);
+        creditRemaining -= totalPrice;
+      }
+      // The user has scanned all the jobs and has remaining cash, therefore no more availableJobs.
+      await this.userService.update(user.id, {
+        credit: creditRemaining,
+        availableJobs: false,
+      });
+    }
+    return totalJobs;
+  }
+
   async createBatchJob() {
-    const newJobs = await this.scanAvailableJobs();
+    // // THIS WILL BE USED IN THE FUTURE WHENEVER WE HAVE USER CREDITS SORTED. NEEDS TO BE EXTENSIVELY TESTED
+    // Get all users which need to be scanned
+    // const unscannedUsers = await this.userService.findAllUnscannedJobsUsers(); // Needs to be checked
+    // Get only the amount of jobs needed and calculate
+    // const availableJobs = await this.jobsAfterCredit(unscannedUsers);
+
+    // Old Version
+    const availableJobs = await this.scanAvailableJobs();
 
     // update scans for jobs
-    newJobs.forEach((job) => (job.scannedLast = new Date()));
+    availableJobs.forEach((job) => (job.scannedLast = new Date()));
 
-    if (!newJobs || newJobs.length === 0) {
+    if (!availableJobs || availableJobs.length === 0) {
       console.log('no new jobs');
       return null;
     }
-    console.log('new jobs found adding them');
-    const updatedNewJobs = await this.jobRepository.save(newJobs);
+    console.log('availableJobs found adding them');
+    const updatedNewJobs = await this.jobRepository.save(availableJobs);
 
     await this.utilService.buildJsonLd(updatedNewJobs, 'job');
 
@@ -184,9 +232,10 @@ export class JobService implements OnApplicationBootstrap {
     console.log(`New Jobs: ${newJobs.length}`);
 
     // Create all jobs
+    let jobEntity: Job;
     for (const job of newJobs) {
       console.log('array for newJobs');
-      const jobEntity = await this.jobRepository.save({
+      jobEntity = await this.jobRepository.save({
         indeedId: job.indeedId,
         link: `https://www.indeed.com/viewjob?jk=${job.indeedId}`,
         name: job.name,
@@ -202,6 +251,9 @@ export class JobService implements OnApplicationBootstrap {
       });
       console.log(`${jobEntity.indeedId} added`);
     }
+    await this.userService.update(jobTypeEntity.user.id, {
+      availableJobs: true,
+    });
     return;
   }
 
@@ -226,7 +278,7 @@ export class JobService implements OnApplicationBootstrap {
 
     const jobEntity = await this.jobTypeService.findOne(manualJobDto.jobTypeId);
 
-    return this.jobRepository.save({
+    const newJob = await this.jobRepository.save({
       indeedId: manualJobDto.indeedId,
       link: manualJobDto.link,
       name: manualJobDto.name,
@@ -240,6 +292,11 @@ export class JobService implements OnApplicationBootstrap {
       companyName: manualJobDto.companyName,
       manual: true,
     });
+    await this.userService.update(jobEntity.user.id, {
+      availableJobs: true,
+    });
+
+    return newJob;
   }
 
   async scanAvailableJobs(): Promise<Job[]> {
@@ -485,12 +542,14 @@ export class JobService implements OnApplicationBootstrap {
       },
     });
     for (const job of test) {
-      console.log(`Threshold Date: ${thresholdDate}`)
-      console.log(`Job firstAdded Date: ${job.firstAdded}`)
-      console.log(`Is Job firstAdded date greater than threshold: ${new Date(job.firstAdded) > thresholdDate}`)
+      console.log(`Threshold Date: ${thresholdDate}`);
+      console.log(`Job firstAdded Date: ${job.firstAdded}`);
+      console.log(
+        `Is Job firstAdded date greater than threshold: ${new Date(job.firstAdded) > thresholdDate}`,
+      );
     }
 
-    return test
+    return test;
   }
 
   async findUserManualJobs(id: string): Promise<Job[]> {
@@ -513,6 +572,31 @@ export class JobService implements OnApplicationBootstrap {
         notification: false,
       },
     });
+  }
+
+  async findUserRecentJobs(userId: string): Promise<Job[]> {
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - 14);
+    const recentJobs = await this.jobRepository.find({
+      relations: {
+        jobType: {
+          user: true,
+        },
+      },
+      where: {
+        scannedLast: MoreThan(thresholdDate),
+        jobType: {
+          user: {
+            id: userId,
+          },
+        },
+      },
+      order: {
+        suitabilityScore: 'DESC',
+        name: 'ASC',
+      },
+    });
+    return recentJobs;
   }
 
   async jobInterestState(id, jobId, interestedState): Promise<Job> {

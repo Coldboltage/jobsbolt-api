@@ -7,7 +7,7 @@ export default registerAs('general', () => {
     testJobFind: process.env.FIND_JOB,
     discordTest: process.env.DISCORD_TEST,
     fullTest: process.env.FULL_TEST,
-    apiUrl: process.env.API_LOCAL,
+    apiUrl: process.env.API_URL,
     rabbitmqUrl: process.env.RABBITMQ_URL,
     websiteUrl: process.env.WEBSITE_URL,
     nodeEnv: process.env.NODE_ENV,
