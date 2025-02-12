@@ -1,6 +1,7 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { EmailService } from './email.service';
 import {
+  ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
@@ -20,6 +21,7 @@ export class EmailController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Post('send-test')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'A simple sent email test',
   })
