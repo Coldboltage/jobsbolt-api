@@ -21,10 +21,10 @@ export class EmailController {
   @Roles(Role.ADMIN)
   @Post('send-test')
   @ApiOperation({
-    summary: 'Jobsbolt Worker place to add jobs for user (Admin only)',
+    summary: 'A simple sent email test',
   })
   @ApiOkResponse({
-    description: 'All new jobs added.',
+    description: 'A test email was fired.',
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
