@@ -4,7 +4,10 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EmailService {
-  constructor(private readonly mailerService: MailerService, private configService: ConfigService) { }
+  constructor(
+    private readonly mailerService: MailerService,
+    private configService: ConfigService,
+  ) { }
 
   async sendTestEmail(to: string) {
     await this.mailerService.sendMail({
