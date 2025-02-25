@@ -23,3 +23,13 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsBoolean()
   availableJobs?: boolean;
 }
+
+// Need to create another DTO which is just for credit and availableJobs using the extends PartialType(CreateUserDto)
+// Problem is, users have access to 
+
+//  update(@Req() req, @Body() updateUserDto: UpdateUserDto) {
+//     return this.userService.update(req.user.id, updateUserDto);
+//   }
+
+// Problematic so we need them to have access to change description, cv and userTalk but they currently could update
+// Credit, that is problematic.

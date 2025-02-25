@@ -17,7 +17,7 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
-import { LoginDto } from './app.dto';
+import { LoginDto, LoginResponseDto, LogoutResponseDto, SentryErrorDto } from './app.dto';
 
 @ApiTags('app')
 @Controller()
@@ -35,6 +35,7 @@ export class AppController {
   })
   @ApiOkResponse({
     description: 'Got the helloWorld response',
+    type: String,
   })
   @ApiBadRequestResponse({
     description: 'Something has went really wrong here!',
@@ -56,6 +57,7 @@ export class AppController {
   })
   @ApiOkResponse({
     description: 'User has logged into their account',
+    type: LoginResponseDto,
   })
   @ApiBadRequestResponse({
     description: 'User was not able to log into their account',
@@ -86,6 +88,7 @@ export class AppController {
   })
   @ApiOkResponse({
     description: 'User has logged out from their account',
+    type: LogoutResponseDto,
   })
   @ApiBadRequestResponse({
     description: 'User was not able to logout',
@@ -137,6 +140,7 @@ export class AppController {
   })
   @ApiOkResponse({
     description: 'An Error for Sentry has been created',
+    type: SentryErrorDto,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',

@@ -22,6 +22,7 @@ import { Role } from '../auth/role.enum';
 import { CreateNewPasswordDto } from '../auth/dto/create-new-password.dto';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
@@ -44,9 +45,9 @@ export class UserController {
   @ApiOperation({
     summary: 'A user creates their own account',
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     description: 'User account created',
-    type: JobType,
+    type: User,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -66,9 +67,13 @@ export class UserController {
   @ApiOperation({
     summary: 'A user adds their CV to Jobsbolt for their account',
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     description: 'A CV has been added to their account',
-    type: JobType,
+    schema: {
+      type: 'string',
+      example:
+        'John Doe\nSoftware Engineer\nExperience: 5 years\nSkills: NestJS, TypeScript',
+    },
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
