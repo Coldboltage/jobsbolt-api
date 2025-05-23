@@ -79,8 +79,8 @@ export class AppController {
     return result;
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.USER)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.USER)
   @Post('auth/logout')
   @ApiBearerAuth()
   @ApiOperation({
