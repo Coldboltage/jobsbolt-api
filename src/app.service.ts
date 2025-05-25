@@ -30,7 +30,7 @@ export class AppService implements OnApplicationBootstrap {
       const result = await this.utilService.checkStatus();
       if (result) {
         clearInterval(checkInterval); // Stop the polling
-        console.log('checkStatus completed moving to create batch')
+        console.log('checkStatus completed moving to create batch');
         await this.jobService.createBatchJob(); // Run the batch job
       }
     }, 10000); // Check every 10 seconds
