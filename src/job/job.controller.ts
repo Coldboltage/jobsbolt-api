@@ -42,7 +42,6 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'All new jobs added.',
-    type: [Job],
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -50,7 +49,10 @@ export class JobController {
   @ApiForbiddenResponse({
     description: 'Forbidden. User does not have the required role.',
   })
-  byBot(@Param('id') id: string, @Body() createJobDto: CreateJobDto) {
+  byBot(
+    @Param('id') id: string,
+    @Body() createJobDto: CreateJobDto,
+  ): Promise<void> {
     return this.jobService.addJobsByBot(id, createJobDto.jobs);
   }
 
@@ -59,11 +61,11 @@ export class JobController {
   @Post('add-job-manually')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'User adds a job manually',
+    summary: 'User adds a single job manually',
   })
   @ApiOkResponse({
-    description: 'Manual job added.',
-    type: [Job],
+    description: 'Single manual job added.',
+    type: Job,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -104,10 +106,13 @@ export class JobController {
   @ApiOperation({
     summary:
       'All the new jobs added by the bot which have not been processed for suitability (Admin only)',
+    description:
+      'New jobs are jobs which have not been scanned yet. when the scannedLast value is set to null, Jobsbolt will pull it unless other circumstances prohibit it.',
   })
   @ApiOkResponse({
     description: 'Found all pending new jobs',
-    type: [Job],
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -126,7 +131,8 @@ export class JobController {
   @ApiOperation({ summary: 'Retrieve all suitable jobs for user' })
   @ApiOkResponse({
     description: 'All suitable jobs retrieved successfully.',
-    type: [Job],
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -149,7 +155,7 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'Suited jobs for user set as false resetted.',
-    type: [Job],
+    type: Job,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -172,7 +178,8 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'All jobs found for user dependent on application status.',
-    type: [Job],
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -197,7 +204,8 @@ export class JobController {
   @ApiOkResponse({
     description:
       'All jobs have been found where cover letter is generated but not applied for',
-    type: [Job],
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -219,7 +227,7 @@ export class JobController {
   })
   @ApiOkResponse({
     description:
-      'Discord bot has sent the next five most suitable jobs to said user.',
+      'Discord bot has sent up to the next five most suitable jobs to said user.',
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -237,11 +245,11 @@ export class JobController {
   @ApiBearerAuth()
   @ApiOperation({
     summary:
-      'Change the applied state of a job for a user from either true or false',
+      'Change the applied state of a job via the indeedId for a user from either true or false',
   })
   @ApiOkResponse({
-    description: 'Applied status updated.',
-    type: [Job],
+    description: 'Applied status updated via IndeedId.',
+    type: Job,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -253,18 +261,33 @@ export class JobController {
     @Req() req,
     @Param('state', ParseBoolPipe) state: boolean,
     @Param('indeedId') indeedId: string,
-  ) {
+  ): Promise<Job> {
     return this.jobService.updateJobApplication(req.user.id, indeedId, state);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER)
   @Patch('change-interested/:jobId/:state')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Change the applied state of a job for a user from either true or false usng the primary key',
+  })
+  @ApiOkResponse({
+    description: 'Applied status updated.',
+    type: Job,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
   jobInterestState(
     @Req() req,
     @Param('jobId') jobId: string,
     @Param('state', ParseBoolPipe) interestedState: boolean,
-  ) {
+  ): Promise<Job> {
     return this.jobService.jobInterestState(
       req.user.id,
       jobId,
@@ -297,10 +320,15 @@ export class JobController {
   @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Gets all jobs where the interested is null',
+    summary:
+      'Gets all jobs where the interested is null but a notification was sent',
+    description:
+      'We want to get all jobs via if the job is in an interested state and the suited is also true. This means the user may fit well holistically to the job and thus, showing them this job might be good for them to secure if possible',
   })
   @ApiOkResponse({
     description: 'All jobs which are pending are sent to the user',
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -309,7 +337,7 @@ export class JobController {
     description: 'Forbidden. User does not have the required role.',
   })
   @Get('pending-interested')
-  findAllJobsNotifiedPendingInterest(@Req() req) {
+  findAllJobsNotifiedPendingInterest(@Req() req): Promise<Job[]> {
     console.log(req.user.id);
     return this.jobService.findAllJobsNotifiedPendingInterest(req.user.id);
   }
@@ -322,6 +350,8 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'All jobs which are pending are sent to the user',
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -343,6 +373,8 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'All interested jobs sent to user',
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -364,6 +396,8 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'All jobs to set for user',
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -385,6 +419,8 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'All jobs to reset for user',
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -406,6 +442,8 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'Found jobs that are best for user not notified of yet',
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -426,6 +464,8 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'Found all the recent jobs for a user within the last 14 days',
+    type: Job,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',
@@ -446,6 +486,7 @@ export class JobController {
   })
   @ApiOkResponse({
     description: 'Specific job for user found',
+    type: Job,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized. Invalid or missing token.',

@@ -5,13 +5,14 @@ import { SlimUser } from '../user/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../email/email.service';
 import { AuthUserUtilService } from '../auth-user-util/auth-user-util.service';
+import { ResetInfo } from './auth.types';
 
 @Injectable()
 export class AuthService {
   constructor(
     private authUserUtilService: AuthUserUtilService,
     private jwtService: JwtService,
-    private emailService: EmailService
+    private emailService: EmailService,
   ) { }
 
   async validateUser(email: string, pass: string): Promise<SlimUser> {
@@ -53,9 +54,9 @@ export class AuthService {
           expiresIn: '60m',
         },
       ),
-    }
+    };
 
-    await this.emailService.restPasswordLink(email, token.reset_token)
+    await this.emailService.restPasswordLink(email, token.reset_token);
     // User found
     // Email user
   }
@@ -72,11 +73,11 @@ export class AuthService {
   async resetPassword(
     password: string,
     reset_token: string,
-  ): Promise<{ email: string, passwordHash: string }> {
+  ): Promise<ResetInfo> {
     await this.checkResetToken(reset_token);
-    const { email } = this.jwtService.decode(reset_token)
+    const { email } = this.jwtService.decode(reset_token);
     const saltOrRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltOrRounds);
-    return { email, passwordHash }
+    return { email, passwordHash };
   }
 }

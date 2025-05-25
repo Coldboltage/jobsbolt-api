@@ -186,7 +186,7 @@ export class JobTypeService implements OnApplicationBootstrap {
     return this.jobTypeRepository.update({ id }, updateJobTypeDto);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} jobType`;
+  remove(id: string, userId: string) {
+    return `This action removes a ${id} jobType by ${userId}`;
   }
 }
