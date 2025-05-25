@@ -4,7 +4,7 @@ services:
   # Traefik Reverse Proxy Service
   traefik:
     image: traefik:v2.5
-    container_name: jobsbolt-traefik
+    container_name: jobsbolt-traefik-local
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -57,7 +57,7 @@ services:
 
   pgbackup:
     image: justb4/pgbackup:11
-    container_name: pg_backup
+    container_name: pg_backup-local
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./backups:/backup # Host directory to store backups
