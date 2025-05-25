@@ -7,6 +7,7 @@ import { IsNull, MoreThan, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as pdfParse from 'pdf-parse';
 import { AuthService } from '../auth/auth.service';
+import { PdfParseResult } from '../utils/utils.types';
 
 @Injectable()
 export class UserService {
@@ -145,10 +146,11 @@ export class UserService {
       pagerender: render_page,
     };
 
-    const data = await pdfParse(cv.buffer, options);
+    const data: PdfParseResult = await pdfParse(cv.buffer, options);
     userEntity.cv = data.text;
 
     await this.userRepository.save(userEntity);
+    return data.text;
   }
 
   async resetPassword(password: string, reset_token: string) {

@@ -20,7 +20,11 @@ async function bootstrap() {
     // origin: `http://${websiteUrl}:1337`, // Only allow requests from this URL
     origin: (origin, callback) => {
       // Allow localhost and ngrok URLs
-      if (!origin || origin.includes(websiteUrl)) {
+      if (
+        !origin ||
+        origin.includes(websiteUrl) ||
+        origin.includes('localhost')
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

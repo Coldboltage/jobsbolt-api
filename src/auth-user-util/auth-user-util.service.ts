@@ -5,11 +5,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class AuthUserUtilService {
-  constructor(@InjectRepository(User)
-  private userRepository: Repository<User>,
-  ) {
-
-  }
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) { }
 
   async findOneByEmail(email: string): Promise<User> {
     const userEntity = await this.userRepository.findOneBy({ email });
