@@ -130,7 +130,7 @@ describe('UtilsService', () => {
       url: '/v1/chat/completions',
       body: {
         temperature: 0,
-        model: 'gpt-4o-2024-11-20',
+        model: 'gpt-4.1',
         messages: [
           {
             role: 'system',
