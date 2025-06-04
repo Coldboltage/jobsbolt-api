@@ -262,7 +262,7 @@ describe('JobService', () => {
   //           },
   //         },
   //       },
-  //       max_tokens: 1000,
+  //       max_tokens: 2000,
   //     },
   //   };
   // };
@@ -662,6 +662,7 @@ describe('JobService', () => {
         manual: false,
         biggerAreaOfImprovement: '',
         firstAdded: new Date(),
+        appliedDate: new Date(),
       };
 
       const existingJobEntityTwo: Job = {
@@ -688,6 +689,7 @@ describe('JobService', () => {
         manual: false,
         biggerAreaOfImprovement: '',
         firstAdded: new Date(),
+        appliedDate: new Date(),
       };
 
       const jobTypeEntitySpy = jest
@@ -886,6 +888,7 @@ describe('JobService', () => {
       manual: false,
       biggerAreaOfImprovement: '',
       firstAdded: new Date(),
+      appliedDate: new Date(),
     };
     it('should find all jobs available for a scan', async () => {
       // Arrange
@@ -1930,6 +1933,7 @@ describe('JobService', () => {
         coverLetter: null,
         biggerAreaOfImprovement: '',
         firstAdded: new Date(),
+        appliedDate: new Date(),
       };
 
       const checkJobSpy = jest

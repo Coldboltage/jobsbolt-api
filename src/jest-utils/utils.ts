@@ -31,6 +31,7 @@ export const createFullUserWithDetails = () => {
   mockJob.suitabilityScore = 95;
   mockJob.date = new Date();
   mockJob.firstAdded = new Date();
+  mockJob.appliedDate = new Date();
 
   // Create an instance of JobType
   const mockJobTypeEntity = new JobType();

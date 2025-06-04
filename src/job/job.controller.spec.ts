@@ -421,6 +421,7 @@ describe('JobController', () => {
         coverLetter: null,
         biggerAreaOfImprovement: '',
         firstAdded: new Date(),
+        appliedDate: new Date()
       };
 
       // Get the data

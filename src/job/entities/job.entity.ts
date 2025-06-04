@@ -30,6 +30,10 @@ export class Job {
   @ApiProperty()
   applied: boolean;
 
+  @Column({ default: null, nullable: true })
+  @ApiProperty()
+  appliedDate: Date;
+
   @Column()
   @ApiProperty()
   link: string; // Indeed link to the job in question

@@ -303,6 +303,7 @@ describe('CoverLetterService', () => {
         manual: false,
         biggerAreaOfImprovement: '',
         firstAdded: new Date(),
+        appliedDate: new Date()
       };
 
       const findOne = jest
