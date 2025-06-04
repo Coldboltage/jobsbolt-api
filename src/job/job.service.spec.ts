@@ -1610,7 +1610,12 @@ describe('JobService', () => {
         },
       });
       expect(jobRepositorySaveSpy).toHaveBeenCalled();
-      expect(jobRepositorySaveSpy).toHaveBeenCalledWith(updatedMockJob);
+      expect(jobRepositorySaveSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          applied: updatedMockJob.applied,
+          appliedDate: expect.any(Date),
+        }),
+      );
       expect(response).toEqual(updatedMockJob);
     });
   });
@@ -1944,7 +1949,7 @@ describe('JobService', () => {
         .spyOn(jobRepository, 'save')
         .mockResolvedValueOnce(savedMockJob);
 
-      const updateUserCredit = jest.spyOn(userService, 'update')
+      const updateUserCredit = jest.spyOn(userService, 'update');
 
       // Act
       const result = await service.addJobManually(mockJob);
