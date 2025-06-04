@@ -130,7 +130,7 @@ describe('UtilsService', () => {
       url: '/v1/chat/completions',
       body: {
         temperature: 0,
-        model: 'gpt-4o-2024-11-20',
+        model: 'gpt-4.1-mini-2025-04-14',
         messages: [
           {
             role: 'system',
@@ -200,7 +200,7 @@ describe('UtilsService', () => {
             },
           },
         },
-        max_tokens: 1000,
+        max_tokens: 2000,
       },
     };
   };

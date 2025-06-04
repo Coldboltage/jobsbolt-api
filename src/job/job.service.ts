@@ -812,6 +812,7 @@ export class JobService implements OnApplicationBootstrap {
     });
 
     jobEntity.applied = status;
+    jobEntity.appliedDate = new Date();
     return this.jobRepository.save(jobEntity);
   }
 
@@ -844,6 +845,23 @@ export class JobService implements OnApplicationBootstrap {
           },
         },
       },
+    });
+  }
+
+  async findMostRecentAppliedJobs(userid: string): Promise<Job[]> {
+    return this.jobRepository.find({
+      where: {
+        jobType: {
+          user: {
+            id: userid,
+          },
+        },
+        applied: true,
+      },
+      order: {
+        appliedDate: 'DESC',
+      },
+      take: 15,
     });
   }
 

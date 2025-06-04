@@ -34,7 +34,9 @@ import { AuthUserUtilModule } from './auth-user-util/auth-user-util.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: '.env',
+      envFilePath: process.env.NODE_ENV
+        ? `.env.${process.env.NODE_ENV}`
+        : '.env',
       load: [
         databaseConfig,
         secretConfig,

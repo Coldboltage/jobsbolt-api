@@ -482,6 +482,28 @@ export class JobController {
   @Roles(Role.USER)
   @ApiBearerAuth()
   @ApiOperation({
+    summary: 'Find the 10 most recent jobs applied for',
+  })
+  @ApiOkResponse({
+    description: 'Found the 10 most recent jobs applied for',
+    type: Job,
+    isArray: true,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the required role.',
+  })
+  @Get('find-recent-applied-jobs-user')
+  findMostRecentAppliedJobs(@Req() req) {
+    return this.jobService.findMostRecentAppliedJobs(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @ApiBearerAuth()
+  @ApiOperation({
     summary: 'Get a specific job for a user',
   })
   @ApiOkResponse({
